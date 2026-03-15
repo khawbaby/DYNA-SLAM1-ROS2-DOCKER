@@ -1,6 +1,6 @@
-version: "3"
+version: "3.8"
 
-x-orb-slam3-common: &orb_slam3_common
+x-dyna-slam1-common: &dyna-slam1_common
     privileged: true
     network_mode: host
     ipc: host
@@ -11,12 +11,13 @@ x-orb-slam3-common: &orb_slam3_common
       - DISPLAY
       - TERM
       - QT_X11_NO_MITSHM=1
-    entrypoint: /bin/bash
+    # entrypoint: ["/bin/bash"]
 
 services:
-  orb_slam3_22_humble:
-    <<: *orb_slam3_common
-    image: orb-slam3-humble:22.04
+  dyna-slam1_22_humble:
+    <<: *dyna-slam1_common
+    network_mode: host
+    image: khawtx/dynaslam1:humble-22.04
     volumes:
       #full dev
       - /dev:/dev:rw
@@ -32,10 +33,17 @@ services:
       - ./orb_slam3_map_generator/:/root/colcon_ws/src/orb_slam3_map_generator/
       - ./slam_msgs/:/root/colcon_ws/src/slam_msgs/
       - ./ORB_SLAM3/:/home/orb/ORB_SLAM3/
+      
+      #datasets
+      - /home/ros2-x13/datasets:/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets
+      - /dev/shm:/dev/shm
+      - ./ORB_SLAM3/bags:/home/orb/ORB_SLAM3/bags
+      - ./ORB_SLAM3/maps:/home/orb/ORB_SLAM3/maps
+      - ./ORB_SLAM3/logs:/home/orb/ORB_SLAM3/logs
 
-  orb_slam3_22_humble_nvidia:
-    <<: *orb_slam3_common
-    image: orb-slam3-humble-nvidia:22.04
+  dyna-slam1_22_humble_nvidia:
+    <<: *dyna-slam1_common
+    image: khawtx/dynaslam1:humble-22.04
     volumes:
       #full dev
       - /dev:/dev:rw
@@ -51,6 +59,15 @@ services:
       - ./orb_slam3_map_generator/:/root/colcon_ws/src/orb_slam3_map_generator/
       - ./slam_msgs/:/root/colcon_ws/src/slam_msgs/
       - ./FastTrack/:/home/orb/ORB_SLAM3/
+      - /home/ros2-x13/DYNA-SLAM1-ROS2-Docker/ORB_SLAM3:/home/orb/ORB_SLAM3
+
+      #datasets
+      - /home/ros2-x13/datasets:/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets
+      - /dev/shm:/dev/shm
+      - ./ORB_SLAM3/bags:/home/orb/ORB_SLAM3/bags
+      - ./ORB_SLAM3/maps:/home/orb/ORB_SLAM3/maps
+      - ./ORB_SLAM3/logs:/home/orb/ORB_SLAM3/logs
+
     runtime: nvidia
     deploy:
       resources:

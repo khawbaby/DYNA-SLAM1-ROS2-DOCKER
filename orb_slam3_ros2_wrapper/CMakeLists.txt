@@ -57,6 +57,7 @@ include_directories(
   include
   ${ORB_SLAM3_ROOT_DIR}/include
   ${ORB_SLAM3_ROOT_DIR}/include/CameraModels
+  /home/orb/ORB_SLAM3/Thirdparty/Sophus
 )
 
 if(ORB_SLAM3_ROS2_WRAPPER_ENABLE_CUDA)

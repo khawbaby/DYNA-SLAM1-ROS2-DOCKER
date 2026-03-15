@@ -41,6 +41,15 @@ namespace ORB_SLAM3_Wrapper
     ORBSLAM3Interface::~ORBSLAM3Interface()
     {
         std::cout << "Interface destructor" << endl;
+        mSLAM_->SaveTrajectoryEuRoC("/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/evaluation/maps/trajectory_EuRoC.txt");
+        mSLAM_->SaveTrajectoryKITTI("/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/evaluation/maps/trajectory_KITTI.txt");
+        mSLAM_->SaveTrajectoryTUM("/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/evaluation/maps/trajectory_TUM.txt");
+
+        mSLAM_->SaveKeyFrameTrajectoryEuRoC("/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/evaluation/maps/keyframe_trajectory_EuRoC.txt");
+        mSLAM_->SaveKeyFrameTrajectoryTUM("/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/evaluation/maps/keyframe_trajectory_TUM.txt");
+
+        cout << "Written trajectory files" << endl;
+
         // Only shutdown if not already shut down (e.g., if shutdown was called explicitly)
         if (mSLAM_ && !mSLAM_->isShutDown())
         {
