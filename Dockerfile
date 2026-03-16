@@ -22,6 +22,7 @@ RUN apt-get install -y \
     wget \
     python3-pip \
     python3-dev \
+    python3-venv \
     build-essential \
     cmake \
     git \
@@ -85,29 +86,35 @@ RUN cd /tmp && git clone https://github.com/opencv/opencv.git && \
 # Python Environment Fixes
 # ------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------
+# Python Virtual Environment
+# ------------------------------------------------------------------------------
+
+# Create Python virtual environment
+RUN python3 -m venv /opt/venv
+
+# Use the virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
+
+
 # Upgrade pip
-RUN pip3 install --upgrade pip
+RUN python3 -m pip install --upgrade pip 
 
-# Fix NumPy compatibility (important)
-RUN pip3 install --no-cache-dir "numpy<2"
+# Fix NumPy compatibility
+RUN pip uninstall -y numpy
+RUN pip install --no-cache-dir numpy==1.26.4 
 
-# Python OpenCV binding
-RUN pip3 install --no-cache-dir opencv-python
-
-# ------------------------------------------------------------------------------
-# PyTorch (CUDA enabled)
-# ------------------------------------------------------------------------------
+# PyTorch (CUDA)
 RUN pip3 install --no-cache-dir \
     torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu121
+    --index-url https://download.pytorch.org/whl/cu121 
+    
 
-# ------------------------------------------------------------------------------
 # YOLOv8
-# ------------------------------------------------------------------------------
-RUN pip3 install --no-cache-dir ultralytics
+RUN pip3 install --no-cache-dir ultralytics 
 
-# Optional faster inference
-RUN pip3 install --no-cache-dir onnxruntime-gpu
+# Faster inference backend
+RUN pip3 install --no-cache-dir onnxruntime-gpu 
 
 # ------------------------------------------------------------------------------
 # VSCode install script (optional dev tool)

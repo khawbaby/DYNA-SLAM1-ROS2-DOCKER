@@ -1,0 +1,9 @@
+datasets
+*.bag
+*.db3
+build
+install
+log
+container_root/.cache
+container_root/.bash_history
+.git

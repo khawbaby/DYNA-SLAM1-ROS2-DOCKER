@@ -57,14 +57,14 @@ RUN apt-get update && apt-get install ros-humble-pcl-ros tmux -y
 RUN apt-get install ros-humble-nav2-common x11-apps nano -y
 RUN apt-get install -y gdb gdbserver ros-humble-rmw-cyclonedds-cpp ros-humble-cv-bridge ros-humble-image-transport ros-humble-image-common ros-humble-vision-opencv
 
-RUN apt-get install -y python3-pip
-# Install PyTorch with CUDA support
-RUN pip3 install --no-cache-dir \
-    torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu121
+# RUN apt-get install -y python3-pip
+# # Install PyTorch with CUDA support
+# RUN pip3 install --no-cache-dir \
+#     torch torchvision torchaudio \
+#     --index-url https://download.pytorch.org/whl/cu121
 
-# Install Ultralytics YOLO
-RUN pip3 install --no-cache-dir ultralytics
+# # Install Ultralytics YOLO
+# RUN pip3 install --no-cache-dir ultralytics
 
 # ===============================================================================
 # NVIDIA GPU image stage (built if `--target nvidia_gpu` is specified)
