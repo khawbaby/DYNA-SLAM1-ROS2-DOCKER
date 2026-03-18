@@ -90,31 +90,24 @@ RUN cd /tmp && git clone https://github.com/opencv/opencv.git && \
 # Python Virtual Environment
 # ------------------------------------------------------------------------------
 
-# Create Python virtual environment
 RUN python3 -m venv /opt/venv
+# ENV PATH="/opt/venv/bin:$PATH"
+# Upgrade pip inside venv
+RUN /opt/venv/bin/pip install --upgrade pip setuptools wheel
 
-# Use the virtual environment
-ENV PATH="/opt/venv/bin:$PATH"
-
-
-# Upgrade pip
-RUN python3 -m pip install --upgrade pip 
-
-# Fix NumPy compatibility
-RUN pip uninstall -y numpy
-RUN pip install --no-cache-dir numpy==1.26.4 
-
-# PyTorch (CUDA)
-RUN pip3 install --no-cache-dir \
+# Install PyTorch (CUDA) inside venv
+RUN /opt/venv/bin/pip install \
     torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu121 
-    
+    --index-url https://download.pytorch.org/whl/cu121
 
-# YOLOv8
-RUN pip3 install --no-cache-dir ultralytics 
+# Install YOLO inside venv
+RUN /opt/venv/bin/pip install ultralytics
 
-# Faster inference backend
-RUN pip3 install --no-cache-dir onnxruntime-gpu 
+# Force compatible versions (still inside venv)
+RUN /opt/venv/bin/pip install numpy==1.26.4 opencv-python==4.5.5.64 --force-reinstall
+
+# Optional acceleration
+RUN /opt/venv/bin/pip install onnxruntime-gpu
 
 # ------------------------------------------------------------------------------
 # VSCode install script (optional dev tool)

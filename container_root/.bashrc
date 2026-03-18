@@ -110,3 +110,4 @@ cd
 sros
 sws
 source /root/ros_env_vars.sh
+export LD_LIBRARY_PATH=/home/orb/ORB_SLAM3/lib:$LD_LIBRARY_PATH

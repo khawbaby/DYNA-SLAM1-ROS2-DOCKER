@@ -18,8 +18,10 @@
 
 
 #include "Tracking.h"
-#include <Python.h>
-#include <numpy/arrayobject.h>
+// #include <Python.h>
+// #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+// #include <numpy/arrayobject.h>
+// #include <numpy/ndarrayobject.h>
 #include "ORBmatcher.h"
 #include "FrameDrawer.h"
 #include "Converter.h"
@@ -34,7 +36,6 @@
 
 #include <mutex>
 #include <chrono>
-
 
 using namespace std;
 
@@ -53,34 +54,41 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mCurrentDynamicMask = cv::Mat();
 
     // Python Binding 
-    Py_Initialize();
-
+    // Py_Initialize();
+    //import_array();
+    //init_np();
     // from module create class instance 
 
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('/home/orb/ORB_SLAM3/src/python')");
+    // PyRun_SimpleString("import sys");
+    // PyRun_SimpleString("sys.path.append('/home/orb/ORB_SLAM3/src/python')");
 
-    module = PyImport_ImportModule("yolo_interface");
+    // module = PyImport_ImportModule("yolo_interface");
 
-    if(!module){
-        PyErr_Print();
-        std::cerr << "Failed to import yolo_interface" << std::endl;
-    }
+    // if(!module){
+    //     PyErr_Print();
+    //     std::cerr << "Failed to import yolo_interface" << std::endl;
+    // }
 
-    PyObject* className = PyObject_GetAttrString(module, "YoloSegment");
+    // PyObject* className = PyObject_GetAttrString(module, "YoloSegment");
 
-    if(!className){
-        PyErr_Print();
-        std::cerr << "Failed to find class YoloSegment" << std::endl;
-    }
+    // if(!className){
+    //     PyErr_Print();
+    //     std::cerr << "Failed to find class YoloSegment" << std::endl;
+    // }
 
-    PyObject* yolo = PyObject_CallObject(className, NULL);
+    // PyObject* yolo = PyObject_CallObject(className, NULL);
 
-    if(!yolo){
-        PyErr_Print();
-        std::cerr << "Failed to create YOLO object" << std::endl;
-    }
+    // if(!yolo){
+    //     PyErr_Print();
+    //     std::cerr << "Failed to create YOLO object" << std::endl;
+    // }
     
+    // std::cout << "Initialized YOLO inst" << std::endl;
+
+    // // Cleanup unused references
+    // Py_DECREF(className);
+    // Py_DECREF(module);
+
     // PyObject* className = PyObject_GetAttrString(module, "YoloSegment");
     // PyObject* yolo = PyObject_CallObject(className, NULL);
 
@@ -568,11 +576,12 @@ Tracking::~Tracking()
 
 }
 
-PyObject* Tracking::mat_to_np(const cv::Mat& image)
-{
-    npy_intp dims[3] = {image.rows, image.cols, image.channels()};
-    return PyArray_SimpleNewFromData(3, dims, NPY_UINT8, image.data);
-}
+// PyObject* Tracking::mat_to_np(const cv::Mat& image)
+// {
+//     npy_intp dims[3] = {image.rows, image.cols, image.channels()};
+//     std::cout << "Converting from cv::Mat to PyObject ...." << std::endl;
+//     return PyArray_SimpleNewFromData(3, dims, NPY_UINT8, image.data);
+// }
 
 void Tracking::newParameterLoader(Settings *settings) {
     mpCamera = settings->camera1();
@@ -1599,36 +1608,56 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     // cv::imwrite("/home/orb/ORB_SLAM3/tmp/frame.png", imRGB);
     // system("python3 /home/orb/ORB_SLAM3/src/python/yolo_segment.py /home/orb/ORB_SLAM3/tmp/frame.png");
     // cv::Mat mask = cv::imread("/home/orb/ORB_SLAM3/tmp/dynamic_mask.png", cv::IMREAD_GRAYSCALE);
+    
+    // cv::Mat to cv2 Object
+    // PyObject* py_image = mat_to_np(mImGray);
+    // PyObject* result = PyObject_CallMethod(
+    //     yolo,
+    //     "segment",
+    //     "(O)",
+    //     py_image
+    // );
+    // std::cout << "calling segment function " << std::endl;
 
-    // Python Binding
-    PyObject* py_image = mat_to_np(imRGB);
-    PyObject* result = PyObject_CallMethod(
-        yolo,
-        "segment",
-        "(O)",
-        py_image
-    );
+    // if (!PyArray_Check(result)) {
+    //     // Handle error: not a numpy array
+    //     std::cout << "Not a Numpy PyObject" << std::endl;
+    // } else {std::cout << "A PyObject Returned !" << std::endl;}
 
-    PyArrayObject* npMask = (PyArrayObject*)result;
+    // PyArrayObject* py_array; 
 
-    cv::Mat dynamicMask(
-        PyArray_DIM(npMask,0),
-        PyArray_DIM(npMask,1),
-        CV_8U,
-        PyArray_DATA(npMask)
-    );
-    // cv::Mat dynamicMask(mImGray.size(), CV_8U, PyArray_DATA(result));
+    // if (PyArray_Check(result)) {
+    //     // Explicitly cast to the correct type
+    //     std::cout << "A PyObject Returned !" << std::endl;
+    //     py_array = reinterpret_cast<PyArrayObject*>(result);
+    // } else {
+    //     // Handle error: the object is not a NumPy array
+    //     PyErr_SetString(PyExc_TypeError, "Expected a NumPy array");
+    //     return Sophus::SE3f(); // Returns an identity transformation
+    // }
 
-    if(!dynamicMask.empty())
-    {
-        mCurrentDynamicMask = dynamicMask.clone();
-        //dynamicMask = dynamicMask.clone();
-    }
+    // int rows = PyArray_SHAPE(py_array)[0];
+    // int cols = PyArray_SHAPE(py_array)[1];
+    // void* frame_data = PyArray_DATA(py_array);
 
+    // std::cout << "Rows: " << rows << std::endl;
+    // std::cout << "cols: " << cols << std::endl;
+    
+    // cv::Mat dynamicMask(rows, cols, CV_8U, frame_data);
+//     // cv::Mat dynamicMask(mImGray.size(), CV_8U, PyArray_DATA(result));
+
+//     if(!dynamicMask.empty())
+//     {
+//         mCurrentDynamicMask = dynamicMask.clone();
+//         //dynamicMask = dynamicMask.clone();
+//     }
+
+    cv::Mat dynamicMask = cv::Mat::ones(mImGray.size(), CV_8U);
+    dynamicMask.colRange(0, dynamicMask.cols/2).setTo(0);
     if (mSensor == System::RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,mCurrentDynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
+        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
     else if(mSensor == System::IMU_RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,mCurrentDynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
+        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
 
 
 

@@ -29,6 +29,7 @@ services:
       #ros-workspaces
       - ./container_root/:/root/
       - ./ros_env_vars.sh:/root/ros_env_vars.sh
+      - ./yolo_ros2/run_yolo.sh:/root/colcon_ws/run_yolo.sh
       - ./orb_slam3_ros2_wrapper/:/root/colcon_ws/src/orb_slam3_ros2_wrapper/
       - ./orb_slam3_map_generator/:/root/colcon_ws/src/orb_slam3_map_generator/
       - ./slam_msgs/:/root/colcon_ws/src/slam_msgs/
@@ -57,6 +58,7 @@ services:
       - ./ros_env_vars.sh:/root/ros_env_vars.sh
       - ./orb_slam3_ros2_wrapper/:/root/colcon_ws/src/orb_slam3_ros2_wrapper/
       - ./orb_slam3_map_generator/:/root/colcon_ws/src/orb_slam3_map_generator/
+      - ./yolo_ros2/:/root/colcon_ws/src/yolo_ros2/
       - ./slam_msgs/:/root/colcon_ws/src/slam_msgs/
       - ./FastTrack/:/home/orb/ORB_SLAM3/
       - /home/ros2-x13/DYNA-SLAM1-ROS2-Docker/ORB_SLAM3:/home/orb/ORB_SLAM3

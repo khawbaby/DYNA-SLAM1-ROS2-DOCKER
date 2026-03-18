@@ -19,11 +19,13 @@
 
 #ifndef TRACKING_H
 #define TRACKING_H
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
-#include <Python.h>
-#include <numpy/arrayobject.h>
+// #include <Python.h>
+// #include <numpy/arrayobject.h>
+// #include <numpy/ndarrayobject.h>
 #include "Viewer.h"
 #include "FrameDrawer.h"
 #include "Atlas.h"
@@ -121,13 +123,13 @@ public:
     cv::Mat mLastDynamicMask;
     cv::Mat mCurrentDynamicMask;
 
-    // Import module yolo_interface 
-    PyObject* moduleName;
-    PyObject* module;
+    // // Import module yolo_interface 
+    // PyObject* moduleName;
+    // PyObject* module;
 
-    // from module create class instance 
-    PyObject* className;
-    PyObject* yolo;
+    // // from module create class instance 
+    // PyObject* className;
+    // PyObject* yolo;
 
     // Tracking states
     enum eTrackingState{
@@ -206,7 +208,7 @@ public:
 
 protected:
 
-    PyObject* mat_to_np(const cv::Mat& image); 
+    // PyObject* mat_to_np(const cv::Mat& image); 
     // Main tracking function. It is independent of the input sensor.
     void Track();
 

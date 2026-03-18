@@ -19,7 +19,8 @@ namespace ORB_SLAM3_Wrapper
         // Declare parameters (topic names)
         this->declare_parameter("rgb_image_topic_name", rclcpp::ParameterValue("camera/image_raw"));
         this->declare_parameter("depth_image_topic_name", rclcpp::ParameterValue("depth/image_raw"));
-
+        this->declare_parameter("dynamic_mask_topic_name", rclcpp::ParameterValue("yolo/dynamic_mask"));
+        
         // ROS Subscribers
         rgbSub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, this->get_parameter("rgb_image_topic_name").as_string());
         depthSub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, this->get_parameter("depth_image_topic_name").as_string());
