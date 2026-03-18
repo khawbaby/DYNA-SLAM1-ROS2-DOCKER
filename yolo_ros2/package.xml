@@ -1,0 +1,23 @@
+<package format="3">
+  <name>yolo_ros2</name>
+  <version>0.0.0</version>
+  <description>YOLO segmentation node publishing dynamic masks</description>
+
+  <maintainer email="your_email">your_name</maintainer>
+  <license>Apache License 2.0</license>
+
+  <!-- Build tool -->
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <!-- ROS runtime dependencies -->
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+
+  <!-- Optional but recommended -->
+  <depend>std_msgs</depend>
+
+  <!-- Needed for image handling -->
+  <depend>image_transport</depend>
+
+</package>
