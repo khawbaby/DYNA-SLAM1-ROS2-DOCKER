@@ -110,6 +110,8 @@ namespace ORB_SLAM3_Wrapper
             return;
         }
 
+        cv::Mat emptyMask;
+
         // track the frame.
         auto Tcw = interface()->slam()->TrackRGBD(cvRGB->image, cvD->image, stampToSec(msgRGB->header.stamp), vImuMeas);
         

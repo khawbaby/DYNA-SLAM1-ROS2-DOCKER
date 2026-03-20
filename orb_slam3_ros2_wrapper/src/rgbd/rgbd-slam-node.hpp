@@ -38,7 +38,8 @@ namespace ORB_SLAM3_Wrapper
         // ROS 2 Callbacks.
         void RGBDCallback(const sensor_msgs::msg::Image::SharedPtr msgRGB,
                           const sensor_msgs::msg::Image::SharedPtr msgD);
-
+        
+        void MaskCallback(const sensor_msgs::msg::Image::SharedPtr msgMask);
         /**
          * Member variables
          */
@@ -46,6 +47,12 @@ namespace ORB_SLAM3_Wrapper
         std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> rgbSub_;
         std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> depthSub_;
         std::shared_ptr<message_filters::Synchronizer<approximate_sync_policy>> syncApproximate_;
+
+
+        rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr maskSub_;
+
+        std::mutex mask_mutex_;
+        cv::Mat latest_mask_;
     };
 }
 #endif
