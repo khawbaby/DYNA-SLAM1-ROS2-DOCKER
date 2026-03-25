@@ -16,7 +16,7 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#include "DynamicTracker.h"
 #include "Tracking.h"
 // #include <Python.h>
 // #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
@@ -52,7 +52,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 {
     mLastDynamicMask = cv::Mat();
     mCurrentDynamicMask = cv::Mat();
-
+    mpDynamicTracker = std::make_unique<DynamicTracker>();
+    // mpDynamicTracker = new DynamicTracker();
     // Python Binding 
     // Py_Initialize();
     //import_array();
@@ -1660,7 +1661,7 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
         mCurrentFrame = Frame(mImGray,imDepth,dynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
 
 
-
+   
 
 
 
@@ -1716,7 +1717,7 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 #endif
 
     Track();
-
+    mLastFrame = mCurrentFrame;
     return mCurrentFrame.GetPose();
 }
 
@@ -1767,7 +1768,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
 
     lastID = mCurrentFrame.mnId;
     Track();
-
+    mLastFrame = mCurrentFrame;
     return mCurrentFrame.GetPose();
 }
 
@@ -1950,6 +1951,18 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
+    
+    // Add Dynamic Tracker here 
+     if(!mLastFrame.mvDynamicPoints3D.empty())
+    {
+        auto &currPts = mCurrentFrame.mvDynamicPoints3D;
+        auto &prevPts = mLastFrame.mvDynamicPoints3D;
+        std::cout << "Size: " << prevPts.size() << std::endl;
+        auto &dynamicGrid = mCurrentFrame.mDynamicGrid;
+        auto &dynamicPos = mCurrentFrame.mvDynamicGridPos;
+        std::cout << "Processing Frame...." << std::endl;
+        mpDynamicTracker->ProcessFrame(currPts, prevPts, dynamicGrid, dynamicPos);
+    }
 
     if (bStepByStep)
     {
@@ -1971,9 +1984,11 @@ void Tracking::Track()
     {
         cout << "ERROR: There is not an active map in the atlas" << endl;
     }
-
+    
+    // Check causalty and frame delay
     if(mState!=NO_IMAGES_YET)
-    {
+    {   
+        // Violate Causality 
         if(mLastFrame.mTimeStamp>mCurrentFrame.mTimeStamp)
         {
             cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << endl;
@@ -1982,6 +1997,7 @@ void Tracking::Track()
             CreateMapInAtlas();
             return;
         }
+        // > 1 sec delay
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
         {
             // cout << mCurrentFrame.mTimeStamp << ", " << mLastFrame.mTimeStamp << endl;
@@ -1996,11 +2012,15 @@ void Tracking::Track()
                     {
                         mpSystem->ResetActiveMap();
                     }
+
+                    // If Optimization occured, create a new map
                     else
                     {
                         CreateMapInAtlas();
                     }
                 }
+
+                // If IMU not initialized, reset map
                 else
                 {
                     cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
@@ -2016,6 +2036,7 @@ void Tracking::Track()
     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpLastKeyFrame)
         mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
 
+    // Check initialization
     if(mState==NO_IMAGES_YET)
     {
         mState = NOT_INITIALIZED;
@@ -2052,7 +2073,7 @@ void Tracking::Track()
         mbMapUpdated = true;
     }
 
-
+    // Initialize system
     if(mState==NOT_INITIALIZED)
     {
         if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD)
@@ -2079,7 +2100,8 @@ void Tracking::Track()
     }
     else
     {
-        // System is initialized. Track Frame.
+        // System is initialized. Track Frame. 
+        // Tracking starts here
         bool bOK;
 
 #ifdef REGISTER_TIMES

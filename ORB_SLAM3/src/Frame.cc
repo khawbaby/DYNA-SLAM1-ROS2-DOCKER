@@ -232,7 +232,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     
     mvbDynamic = std::vector<bool>(mvKeys.size(), false);
 
-    cout << "size of keyframe matrix: " << mvbDynamic.size() << endl;
+    // cout << "size of keyframe matrix: " << mvbDynamic.size() << endl;
     int dilation_size = 7;
 
     // Morphological Actions
@@ -242,7 +242,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
         cv::Point(dilation_size, dilation_size)
     );
 
-    cv::erode(mDynamicMask, mDynamicMask, kernel);
+    cv::dilate(mDynamicMask, mDynamicMask, kernel);
 
     std::vector<cv::KeyPoint> _mvKeys;
     std::vector<cv::KeyPoint> _mvDynamicKeys;
@@ -251,7 +251,14 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     for (size_t i(0); i < mvKeys.size(); ++i)
     {
-        int val = (int)mDynamicMask.at<uchar>(mvKeys[i].pt.y,mvKeys[i].pt.x);
+        int x = round(mvKeys[i].pt.x);
+        int y = round(mvKeys[i].pt.y);
+
+        if(x < 0 || x >= mDynamicMask.cols || y < 0 || y >= mDynamicMask.rows)
+            continue;
+
+        int val = mDynamicMask.at<uchar>(y, x);
+
         if (val == 1)
         {
             _mvKeys.push_back(mvKeys[i]);
@@ -265,70 +272,49 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     mvKeys = _mvKeys;
     mDescriptors = _mDescriptors;
 
-    N = mvKeys.size();
+    mvDynamicKeys = _mvDynamicKeys; 
+    mDynamicDescriptors = _mDynamicDescriptors;
 
+    N = mvKeys.size();
+    N_dynamic = mvDynamicKeys.size();
     if(mvKeys.empty())
         return;
 
     UndistortKeyPoints();
+    UndistortDynamicKeyPoints();
     ComputeStereoFromRGBD(imDepth);
 
-    // // Static Keys
-    // std::vector<cv::KeyPoint> _mvStaticKeys;
-    // cv::Mat _mStaticDescriptors;
+    mvDynamicPoints3D.clear();
 
-    // // Tmp vars for Points and Descriptors 
-    // std::vector<cv::KeyPoint> _mvKeys;
-    // std::vector<cv::KeyPoint> _mvKeysUn;
-    // cv::Mat _mDescriptors;
+    for(size_t i = 0; i < mvDynamicKeys.size(); i++)
+    {
+        const cv::KeyPoint &kp = mvDynamicKeys[i];
 
-    // std::vector<float> _mvuRight;
-    // std::vector<float> _mvDepth;
+        int x = round(kp.pt.x);
+        int y = round(kp.pt.y);
 
-    // std::vector<bool> _mvbDynamic;  
+        if(x < 0 || x >= imDepth.cols || y < 0 || y >= imDepth.rows)
+            continue;
 
-    // std::cout << "mvKeys size: " << mvKeys.size() << std::endl;
-    // std::cout << "mvKeysUn size: " << mvKeysUn.size() << std::endl;
-    // std::cout << "Descriptors rows: " << mDescriptors.rows << std::endl;
-    // std::cout << "mvDepth size: " << mvDepth.size() << std::endl;
-    // std::cout << "mvuRight size: " << mvuRight.size() << std::endl;
-    // std::cout << "mvbDynamic size: " << mvbDynamic.size() << std::endl;
+        float d = imDepth.at<float>(y, x);
+        if(d <= 0) continue;
 
-    // for(size_t i=0;i<mvKeys.size();i++)
-    // {
-    //     int x = (int)mvKeys[i].pt.x;
-    //     int y = (int)mvKeys[i].pt.y;
+        float X = (kp.pt.x - cx) * d * invfx;
+        float Y = (kp.pt.y - cy) * d * invfy;
+        float Z = d;
 
-    //     if(x>=0 && x<mDynamicMask.cols && y>=0 && y<mDynamicMask.rows)
-    //     {
-    //         uchar value = mDynamicMask.at<uchar>(y,x);
+        if(d > 0)
+        {
+            mvDynamicPoints3D.emplace_back(X,Y,Z);
+        }
+        else
+        {
+            mvDynamicPoints3D.emplace_back(NAN,NAN,NAN);
+        }
+    }
 
-    //         // Only keep static features
-    //         if(value == 1)
-    //         {
-    //             _mvStaticKeys.push_back(mvKeys[i]);
-    //             _mvKeysUn.push_back(mvKeysUn[i]);
-    //             _mStaticDescriptors.push_back(mDescriptors.row(i));
-
-    //             _mvuRight.push_back(mvuRight[i]);
-    //             _mvDepth.push_back(mvDepth[i]);
-
-    //             _mvbDynamic.push_back(false);
-    //         }
-    //     }
-    // }
-    
-    // mvKeys = _mvStaticKeys;
-    // mvKeysUn = _mvKeysUn;
-    // mDescriptors = _mStaticDescriptors;
-    // mvuRight = _mvuRight;
-    // mvDepth = _mvDepth;
-    // mvbDynamic = _mvbDynamic;
-
-    cout << "Number of filtered dynamic keyframes: " << mvbDynamic.size() << endl;
-    cout << "size of filtered keyframe matrix: " << mvKeys.size() << endl;
-
-    
+    // cout << "Number of filtered dynamic keyframes: " << mvbDynamic.size() << endl;
+    // cout << "size of filtered keyframe matrix: " << mvKeys.size() << endl;
 
     mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
 
@@ -377,6 +363,12 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     monoRight = -1;
 
     AssignFeaturesToGrid();
+    AssignDynamicFeaturesToGrid();
+
+    VisualizeGrid(imGray);
+
+    // mpPrevFrame->mvDynamicKeys
+    // mpPrevFrame->mvDynamicPoints3D
 }
 
 // Monocular IMU
@@ -507,6 +499,83 @@ void Frame::AssignFeaturesToGrid()
                 mGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
         }
     }
+}
+
+
+
+void Frame::AssignDynamicFeaturesToGrid()
+{
+    const int nCells = FRAME_GRID_COLS * FRAME_GRID_ROWS;
+    int nReserve = 0.5f * N_dynamic / (nCells);
+
+    // Reserve space
+    for(unsigned int i = 0; i < FRAME_GRID_COLS; i++)
+        for(unsigned int j = 0; j < FRAME_GRID_ROWS; j++){
+            mDynamicGrid[i][j].reserve(nReserve);
+            if(Nleft != -1){
+                mDynamicGridRight[i][j].reserve(nReserve);
+            }
+        }
+
+    // Initialize grid position storage
+    mvDynamicGridPos.resize(N_dynamic);
+
+    for(int i = 0; i < N_dynamic; i++)
+    {
+        const cv::KeyPoint &kp = (Nleft == -1) ? mvDynamicKeysUn[i]
+                                               : (i < Nleft) ? mvDynamicKeys[i]
+                                                             : mvDynamicKeysRight[i - Nleft];
+
+        int nGridPosX, nGridPosY;
+
+        if(PosInGrid(kp, nGridPosX, nGridPosY))
+        {
+            // Store grid position
+            mvDynamicGridPos[i] = {nGridPosX, nGridPosY};
+
+            if(Nleft == -1 || i < Nleft)
+                mDynamicGrid[nGridPosX][nGridPosY].push_back(i);
+            else
+                mDynamicGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
+        }
+        else
+        {
+            // Mark invalid position
+            mvDynamicGridPos[i] = {-1, -1};
+        }
+    }
+}
+
+void Frame::VisualizeGrid(const cv::Mat &imGray) {
+    cv::Mat vis;
+    cv::cvtColor(imGray, vis, cv::COLOR_GRAY2BGR);
+
+    // Draw vertical lines
+    for(int i = 0; i <= FRAME_GRID_COLS; i++) {
+        int cellWidth  = (mnMaxX - mnMinX) / FRAME_GRID_COLS;
+        int x = mnMinX + i * cellWidth;
+        cv::line(vis, cv::Point(x, mnMinY), cv::Point(x, mnMaxY),
+                cv::Scalar(255, 0, 0), 1);
+    }
+
+    // Draw horizontal lines
+    for(int j = 0; j <= FRAME_GRID_ROWS; j++) {
+        int cellHeight = (mnMaxY - mnMinY) / FRAME_GRID_ROWS;
+        int y = mnMinY + j * cellHeight;
+        cv::line(vis, cv::Point(mnMinX, y), cv::Point(mnMaxX, y),
+                cv::Scalar(255, 0, 0), 1);
+    }
+
+    for(const auto &kp : mvDynamicKeys) {
+        cv::circle(vis, kp.pt, 2, cv::Scalar(0,0,255), -1); // red
+    }   
+
+    for(const auto &kp : mvKeys) {
+        cv::circle(vis, kp.pt, 2, cv::Scalar(0,255,0), -1); // green
+    }
+
+    cv::imshow("Dynamic Grid Visualization", vis);
+    cv::waitKey(1);
 }
 
 void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
@@ -869,6 +938,41 @@ void Frame::UndistortKeyPoints()
         kp.pt.x=mat.at<float>(i,0);
         kp.pt.y=mat.at<float>(i,1);
         mvKeysUn[i]=kp;
+    }
+
+}
+
+void Frame::UndistortDynamicKeyPoints()
+{
+    if(mDistCoef.at<float>(0)==0.0)
+    {
+        mvDynamicKeysUn=mvDynamicKeys;
+        return;
+    }
+
+    // Fill matrix with points
+    cv::Mat mat(N_dynamic,2,CV_32F);
+
+    for(int i=0; i<N_dynamic; i++)
+    {
+        mat.at<float>(i,0)=mvDynamicKeys[i].pt.x;
+        mat.at<float>(i,1)=mvDynamicKeys[i].pt.y;
+    }
+
+    // Undistort points
+    mat=mat.reshape(2);
+    cv::undistortPoints(mat,mat, static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
+    mat=mat.reshape(1);
+
+
+    // Fill undistorted keypoint vector
+    mvDynamicKeysUn.resize(N_dynamic);
+    for(int i=0; i<N_dynamic; i++)
+    {
+        cv::KeyPoint kp = mvDynamicKeys[i];
+        kp.pt.x=mat.at<float>(i,0);
+        kp.pt.y=mat.at<float>(i,1);
+        mvDynamicKeysUn[i]=kp;
     }
 
 }

@@ -39,6 +39,8 @@
 #include "Eigen/Core"
 #include "sophus/se3.hpp"
 
+#include "DynamicObject.h"
+
 namespace ORB_SLAM3
 {
 #define FRAME_GRID_ROWS 48
@@ -224,12 +226,18 @@ public:
 
     // Number of KeyPoints.
     int N;
+    int N_dynamic;
 
     // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
     // In the stereo case, mvKeysUn is redundant as images must be rectified.
     // In the RGB-D case, RGB images can be distorted.
     std::vector<cv::KeyPoint> mvKeys, mvKeysRight;
     std::vector<cv::KeyPoint> mvKeysUn;
+
+    std::vector<cv::KeyPoint> mvDynamicKeys, mvDynamicKeysRight;
+    std::vector<cv::KeyPoint> mvDynamicKeysUn;
+    std::vector<cv::Point3f> mvDynamicPoints3D;
+    std::vector<DynamicObject> mDynamicObjects;
 
     // Corresponding stereo coordinate and depth for each keypoint.
     std::vector<MapPoint*> mvpMapPoints;
@@ -243,6 +251,7 @@ public:
 
     // ORB descriptor, each row associated to a keypoint.
     cv::Mat mDescriptors, mDescriptorsRight;
+    cv::Mat mDynamicDescriptors;
 
     // MapPoints associated to keypoints, NULL pointer if no association.
     // Flag to identify outlier associations.
@@ -253,7 +262,9 @@ public:
     static float mfGridElementWidthInv;
     static float mfGridElementHeightInv;
     std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
-
+    std::vector<std::size_t> mDynamicGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+    std::vector<std::pair<int,int>> mvDynamicGridPos;
+    
     IMU::Bias mPredBias;
 
     // IMU bias
@@ -312,12 +323,15 @@ private:
     // Only for the RGB-D case. Stereo must be already rectified!
     // (called in the constructor).
     void UndistortKeyPoints();
-
+    void UndistortDynamicKeyPoints();
+    
     // Computes image bounds for the undistorted image (called in the constructor).
     void ComputeImageBounds(const cv::Mat &imLeft);
 
     // Assign keypoints to the grid for speed up feature matching (called in the constructor).
     void AssignFeaturesToGrid();
+    void AssignDynamicFeaturesToGrid();
+    void VisualizeGrid(const cv::Mat &imGray);
 
     bool mbIsSet;
 
@@ -345,6 +359,7 @@ public:
 
     //Grid for the right image
     std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+    std::vector<std::size_t> mDynamicGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
     Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, Sophus::SE3f& Tlr,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 

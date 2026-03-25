@@ -60,6 +60,7 @@ class YoloNode(Node):
                     seg = cv2.resize(seg, (frame.shape[1], frame.shape[0]))
                     mask[seg > 0.5] = 0
 
+
         vis = mask*255
         cv2.imshow("mask", vis)
         cv2.waitKey(1)

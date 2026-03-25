@@ -21,6 +21,9 @@
 #define TRACKING_H
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
+#include "DynamicTracker.h"
+#include "DynamicObject.h"
+#include <memory>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 // #include <Python.h>
@@ -124,6 +127,8 @@ public:
     cv::Mat mLastDynamicMask;
     cv::Mat mCurrentDynamicMask;
 
+    std::unique_ptr<DynamicTracker> mpDynamicTracker;
+    
     // // Import module yolo_interface 
     // PyObject* moduleName;
     // PyObject* module;
@@ -148,10 +153,11 @@ public:
 
     // Input sensor
     int mSensor;
-
+    
     // Current Frame
     Frame mCurrentFrame;
     Frame mLastFrame;
+
 
     cv::Mat mImGray;
 
