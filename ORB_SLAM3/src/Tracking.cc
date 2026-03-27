@@ -1955,13 +1955,7 @@ void Tracking::Track()
     // Add Dynamic Tracker here 
      if(!mLastFrame.mvDynamicPoints3D.empty())
     {
-        auto &currPts = mCurrentFrame.mvDynamicPoints3D;
-        auto &prevPts = mLastFrame.mvDynamicPoints3D;
-        std::cout << "Size: " << prevPts.size() << std::endl;
-        auto &dynamicGrid = mCurrentFrame.mDynamicGrid;
-        auto &dynamicPos = mCurrentFrame.mvDynamicGridPos;
-        std::cout << "Processing Frame...." << std::endl;
-        mpDynamicTracker->ProcessFrame(currPts, prevPts, dynamicGrid, dynamicPos);
+        mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame);
     }
 
     if (bStepByStep)
