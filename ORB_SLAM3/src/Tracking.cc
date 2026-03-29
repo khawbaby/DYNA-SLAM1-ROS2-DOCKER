@@ -1718,6 +1718,7 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 
     Track();
     mLastFrame = mCurrentFrame;
+    //std::cout << "Updated Frame" << std::endl;
     return mCurrentFrame.GetPose();
 }
 
