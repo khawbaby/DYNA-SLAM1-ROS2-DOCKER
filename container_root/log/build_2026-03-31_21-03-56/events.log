@@ -1,0 +1,6 @@
+[0.000000] (-) TimerEvent: {}
+[0.000416] (-) JobUnselected: {'identifier': 'orb_slam3_map_generator'}
+[0.000450] (-) JobUnselected: {'identifier': 'orb_slam3_ros2_wrapper'}
+[0.000566] (-) JobUnselected: {'identifier': 'slam_msgs'}
+[0.000585] (-) JobUnselected: {'identifier': 'yolo_ros2'}
+[0.000603] (-) EventReactorShutdown: {}

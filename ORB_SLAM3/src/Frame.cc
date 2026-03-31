@@ -72,9 +72,19 @@ Frame::Frame(const Frame &frame)
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
      mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false)
 {
+    mvbDynamic = frame.mvbDynamic;
+    mvPoints3D = frame.mvPoints3D;
+    mDynamicObjects = frame.mDynamicObjects;
+    mImGray = frame.mImGray;
+    mvDynamicKeys = frame.mvDynamicKeys;
+    mvDynamicPoints3D = frame.mvDynamicPoints3D;
+    mvDynamicGridPos = frame.mvDynamicGridPos;
+    N_dynamic = frame.N_dynamic;
+
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++){
             mGrid[i][j]=frame.mGrid[i][j];
+            mDynamicGrid[i][j]=frame.mDynamicGrid[i][j];
             if(frame.Nleft > 0){
                 mGridRight[i][j] = frame.mGridRight[i][j];
             }
@@ -218,7 +228,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     // Dynamic Mask 
     mDynamicMask = dynamicMask.clone();
-
+    //mImGray = imGray.clone();
     // ORB extraction
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
@@ -233,7 +243,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     mvbDynamic = std::vector<bool>(mvKeys.size(), false);
 
     // cout << "size of keyframe matrix: " << mvbDynamic.size() << endl;
-    int dilation_size = 7;
+    int dilation_size = 10;
 
     // Morphological Actions
     cv::Mat kernel = cv::getStructuringElement(
@@ -261,16 +271,13 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
         if (val == 1)
         {
-            _mvKeys.push_back(mvKeys[i]);
-            _mDescriptors.push_back(mDescriptors.row(i));
+            mvbDynamic[i] = false;
         } else {
+            mvbDynamic[i] = true;
             _mvDynamicKeys.push_back(mvKeys[i]);
             _mDynamicDescriptors.push_back(mDescriptors.row(i));
         }
     }
-
-    mvKeys = _mvKeys;
-    mDescriptors = _mDescriptors;
 
     mvDynamicKeys = _mvDynamicKeys; 
     mDynamicDescriptors = _mDynamicDescriptors;
@@ -284,7 +291,31 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     UndistortDynamicKeyPoints();
     ComputeStereoFromRGBD(imDepth);
 
-    mvDynamicPoints3D.clear();
+    mvPoints3D = std::vector<cv::Point3f>(
+        mvKeys.size(),
+        cv::Point3f(NAN, NAN, NAN)
+    );
+
+    for(size_t i = 0; i < mvKeys.size(); i++)
+    {
+        const cv::KeyPoint &kp = mvKeys[i];
+
+        int x = round(kp.pt.x);
+        int y = round(kp.pt.y);
+
+        if(x < 0 || x >= imDepth.cols || y < 0 || y >= imDepth.rows)
+            continue;
+
+        float d = imDepth.at<float>(y, x);
+        if(d <= 0)
+            continue;
+
+        float X = (kp.pt.x - cx) * d * invfx;
+        float Y = (kp.pt.y - cy) * d * invfy;
+        float Z = d;
+
+        mvPoints3D[i] = cv::Point3f(X, Y, Z);
+    }
 
     for(size_t i = 0; i < mvDynamicKeys.size(); i++)
     {
@@ -312,7 +343,6 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
             mvDynamicPoints3D.emplace_back(NAN,NAN,NAN);
         }
     }
-
     // cout << "Number of filtered dynamic keyframes: " << mvbDynamic.size() << endl;
     // cout << "size of filtered keyframe matrix: " << mvKeys.size() << endl;
 
@@ -566,13 +596,15 @@ void Frame::VisualizeGrid(const cv::Mat &imGray) {
                 cv::Scalar(255, 0, 0), 1);
     }
 
-    for(const auto &kp : mvDynamicKeys) {
-        cv::circle(vis, kp.pt, 2, cv::Scalar(0,0,255), -1); // red
-    }   
-
+    int i =0;
     for(const auto &kp : mvKeys) {
-        cv::circle(vis, kp.pt, 2, cv::Scalar(0,255,0), -1); // green
-    }
+        if (mvbDynamic[i]) {
+            cv::circle(vis, kp.pt, 2, cv::Scalar(0,0,255), -1); // red
+        } else {
+            cv::circle(vis, kp.pt, 2, cv::Scalar(0,255,0), -1); // green
+        }
+        i = i+1;
+    } 
 
     cv::imshow("Dynamic Grid Visualization", vis);
     cv::waitKey(1);

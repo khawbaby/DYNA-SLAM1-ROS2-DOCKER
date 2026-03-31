@@ -233,7 +233,7 @@ public:
     // In the RGB-D case, RGB images can be distorted.
     std::vector<cv::KeyPoint> mvKeys, mvKeysRight;
     std::vector<cv::KeyPoint> mvKeysUn;
-
+    std::vector<cv::Point3f> mvPoints3D;
     std::vector<cv::KeyPoint> mvDynamicKeys, mvDynamicKeysRight;
     std::vector<cv::KeyPoint> mvDynamicKeysUn;
     std::vector<cv::Point3f> mvDynamicPoints3D;
@@ -341,7 +341,7 @@ private:
 
 public:
     GeometricCamera* mpCamera, *mpCamera2;
-
+    cv::Mat mImGray;
     //Number of KeyPoints extracted in the left and right images
     int Nleft, Nright;
     //Number of Non Lapping Keypoints

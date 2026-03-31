@@ -486,14 +486,15 @@ void LocalMapping::CreateNewMapPoints()
             const int &idx2 = vMatchedIndices[ikp].second;
             
             // ===== DynaSLAM dynamic filtering =====
-            if(mpCurrentKeyFrame->mvbDynamic[idx1] || pKF2->mvbDynamic[idx2])
-                continue;
             
             if(idx1 >= mpCurrentKeyFrame->mvbDynamic.size() || idx2 >= pKF2->mvbDynamic.size())
                 continue;
 
-            if(mpCurrentKeyFrame->mvbDynamic[idx1] || pKF2->mvbDynamic[idx2])
+            if(mpCurrentKeyFrame->mvbDynamic[idx1] || pKF2->mvbDynamic[idx2]) {
+                std::cout << "DYNAMIC POINT DETECTED..... SKIPPING" << std::endl;
                 continue;
+            }
+                
 
             const cv::KeyPoint &kp1 = (mpCurrentKeyFrame -> NLeft == -1) ? mpCurrentKeyFrame->mvKeysUn[idx1]
                                                                          : (idx1 < mpCurrentKeyFrame -> NLeft) ? mpCurrentKeyFrame -> mvKeys[idx1]

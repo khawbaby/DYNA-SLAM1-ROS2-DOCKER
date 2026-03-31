@@ -1,0 +1,53 @@
+[0.283s] Invoking command in '/root/colcon_ws/src/yolo_ros2': PYTHONPATH=/root/build/yolo_ros2/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/root/install/yolo_ros2/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/yolo_ros2 build --build-base /root/build/yolo_ros2/build install --record /root/build/yolo_ros2/install.log --single-version-externally-managed
+[0.430s] running egg_info
+[0.431s] creating ../../../build/yolo_ros2/yolo_ros2.egg-info
+[0.431s] writing ../../../build/yolo_ros2/yolo_ros2.egg-info/PKG-INFO
+[0.431s] writing dependency_links to ../../../build/yolo_ros2/yolo_ros2.egg-info/dependency_links.txt
+[0.431s] writing entry points to ../../../build/yolo_ros2/yolo_ros2.egg-info/entry_points.txt
+[0.431s] writing requirements to ../../../build/yolo_ros2/yolo_ros2.egg-info/requires.txt
+[0.431s] writing top-level names to ../../../build/yolo_ros2/yolo_ros2.egg-info/top_level.txt
+[0.431s] writing manifest file '../../../build/yolo_ros2/yolo_ros2.egg-info/SOURCES.txt'
+[0.433s] reading manifest file '../../../build/yolo_ros2/yolo_ros2.egg-info/SOURCES.txt'
+[0.433s] writing manifest file '../../../build/yolo_ros2/yolo_ros2.egg-info/SOURCES.txt'
+[0.433s] running build
+[0.433s] running build_py
+[0.433s] creating /root/build/yolo_ros2/build
+[0.433s] creating /root/build/yolo_ros2/build/lib
+[0.433s] creating /root/build/yolo_ros2/build/lib/yolo_ros2
+[0.433s] copying yolo_ros2/yolo_node.py -> /root/build/yolo_ros2/build/lib/yolo_ros2
+[0.434s] copying yolo_ros2/__init__.py -> /root/build/yolo_ros2/build/lib/yolo_ros2
+[0.434s] running install
+[0.434s] running install_lib
+[0.435s] creating /root/install/yolo_ros2/lib/python3.10/site-packages/yolo_ros2
+[0.435s] copying /root/build/yolo_ros2/build/lib/yolo_ros2/yolo_node.py -> /root/install/yolo_ros2/lib/python3.10/site-packages/yolo_ros2
+[0.435s] copying /root/build/yolo_ros2/build/lib/yolo_ros2/__init__.py -> /root/install/yolo_ros2/lib/python3.10/site-packages/yolo_ros2
+[0.435s] byte-compiling /root/install/yolo_ros2/lib/python3.10/site-packages/yolo_ros2/yolo_node.py to yolo_node.cpython-310.pyc
+[0.436s] byte-compiling /root/install/yolo_ros2/lib/python3.10/site-packages/yolo_ros2/__init__.py to __init__.cpython-310.pyc
+[0.436s] running install_data
+[0.436s] creating /root/install/yolo_ros2/share
+[0.436s] creating /root/install/yolo_ros2/share/ament_index
+[0.436s] creating /root/install/yolo_ros2/share/ament_index/resource_index
+[0.436s] creating /root/install/yolo_ros2/share/ament_index/resource_index/packages
+[0.436s] copying resource/yolo_ros2 -> /root/install/yolo_ros2/share/ament_index/resource_index/packages
+[0.436s] creating /root/install/yolo_ros2/share/yolo_ros2
+[0.436s] copying package.xml -> /root/install/yolo_ros2/share/yolo_ros2
+[0.437s] running install_egg_info
+[0.438s] Copying ../../../build/yolo_ros2/yolo_ros2.egg-info to /root/install/yolo_ros2/lib/python3.10/site-packages/yolo_ros2-0.0.0-py3.10.egg-info
+[0.438s] running install_scripts
+[0.455s] Installing yolo_node script to /root/install/yolo_ros2/lib/yolo_ros2
+[0.455s] writing list of installed files to '/root/build/yolo_ros2/install.log'
+[0.458s] running egg_info
+[0.458s] creating ../../../build/yolo_ros2/UNKNOWN.egg-info
+[0.459s] writing ../../../build/yolo_ros2/UNKNOWN.egg-info/PKG-INFO
+[0.459s] writing dependency_links to ../../../build/yolo_ros2/UNKNOWN.egg-info/dependency_links.txt
+[0.459s] writing top-level names to ../../../build/yolo_ros2/UNKNOWN.egg-info/top_level.txt
+[0.459s] writing manifest file '../../../build/yolo_ros2/UNKNOWN.egg-info/SOURCES.txt'
+[0.460s] reading manifest file '../../../build/yolo_ros2/UNKNOWN.egg-info/SOURCES.txt'
+[0.460s] writing manifest file '../../../build/yolo_ros2/UNKNOWN.egg-info/SOURCES.txt'
+[0.460s] running build
+[0.460s] running install
+[0.460s] running install_egg_info
+[0.461s] Copying ../../../build/yolo_ros2/UNKNOWN.egg-info to /root/install/yolo_ros2/lib/python3.10/site-packages/UNKNOWN-0.0.0-py3.10.egg-info
+[0.461s] running install_scripts
+[0.462s] writing list of installed files to '/root/build/yolo_ros2/install.log'
+[0.491s] Invoked command in '/root/colcon_ws/src/yolo_ros2' returned '0': PYTHONPATH=/root/build/yolo_ros2/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/root/install/yolo_ros2/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/yolo_ros2 build --build-base /root/build/yolo_ros2/build install --record /root/build/yolo_ros2/install.log --single-version-externally-managed

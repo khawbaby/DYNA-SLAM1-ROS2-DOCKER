@@ -1717,7 +1717,7 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 #endif
 
     Track();
-    mLastFrame = mCurrentFrame;
+    //mLastFrame = mCurrentFrame;
     //std::cout << "Updated Frame" << std::endl;
     return mCurrentFrame.GetPose();
 }
@@ -1769,7 +1769,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
 
     lastID = mCurrentFrame.mnId;
     Track();
-    mLastFrame = mCurrentFrame;
+    //mLastFrame = mCurrentFrame;
     return mCurrentFrame.GetPose();
 }
 
@@ -1952,12 +1952,6 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
-    
-    // Add Dynamic Tracker here 
-     if(!mLastFrame.mvDynamicPoints3D.empty())
-    {
-        mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame);
-    }
 
     if (bStepByStep)
     {
@@ -3081,6 +3075,89 @@ bool Tracking::TrackWithMotionModel()
         else
             return false;
     }
+
+
+    // =====================
+    // DYNAMIC TRACKING HERE
+    // =====================
+    std::vector<cv::Point2f> prevPts, currPts;
+    std::vector<int> prevIdx;
+    bool empty_vect = false;
+
+    if (mLastFrame.mImGray.empty() || mLastFrame.mvDynamicKeys.empty() || mCurrentFrame.mvDynamicKeys.empty())
+        empty_vect = true;
+
+    if (!empty_vect) {
+        for(int i = 0; i < mLastFrame.N; i++)
+        {
+            if(mLastFrame.mvbDynamic[i])
+                prevPts.push_back(mLastFrame.mvKeys[i].pt);
+                prevIdx.push_back(i); 
+        }
+
+        for(int i = 0; i < mCurrentFrame.N; i++)
+        {
+            if(mCurrentFrame.mvbDynamic[i])
+                currPts.push_back(mCurrentFrame.mvKeys[i].pt);
+        }
+    
+        std::vector<uchar> status;
+        std::vector<float> err;
+        if(mLastFrame.mImGray.empty() || mCurrentFrame.mImGray.empty())
+        {
+            cout << "Image empty!" << endl;
+            return false;
+        }
+        cv::calcOpticalFlowPyrLK(
+            mLastFrame.mImGray, mCurrentFrame.mImGray,
+            prevPts, currPts,
+            status, err
+        );
+
+        // 3D Correspondeces (Tracked Pairs)
+        vector<cv::Point3f> dynamicPrev;
+        vector<cv::Point3f> dynamicCurr;
+
+        for(int k = 0; k < prevPts.size(); k++)
+        {
+            if(!status[k]) continue;
+
+            int idx_prev = prevIdx[k];  // from your earlier mapping
+
+            // find nearest keypoint in current frame
+            int idx_curr = -1;
+            float bestDist = 5.0f;
+
+            for(int i = 0; i < mCurrentFrame.N; i++)
+            {
+                if(!mCurrentFrame.mvbDynamic[i]) continue;
+
+                float dist = cv::norm(mCurrentFrame.mvKeys[i].pt - currPts[k]);
+
+                if(dist < bestDist)
+                {
+                    bestDist = dist;
+                    idx_curr = i;
+                }
+            }
+
+            if(idx_curr < 0) continue;
+
+            cv::Point3f prev3D = mLastFrame.mvPoints3D[idx_prev];
+            cv::Point3f curr3D = mCurrentFrame.mvPoints3D[idx_curr];
+
+            if(std::isnan(prev3D.x) || std::isnan(curr3D.x))
+                continue;
+
+            dynamicPrev.push_back(prev3D);
+            dynamicCurr.push_back(curr3D);
+        }
+        // Add Dynamic Tracker here 
+
+        //mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame);
+
+    }
+    // =====================
 
     // Optimize frame pose with all matches
     Optimizer::PoseOptimization(&mCurrentFrame);

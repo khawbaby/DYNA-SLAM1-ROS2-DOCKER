@@ -1,0 +1,9 @@
+setup.cfg
+setup.py
+../../../build/yolo_ros2/UNKNOWN.egg-info/PKG-INFO
+../../../build/yolo_ros2/UNKNOWN.egg-info/SOURCES.txt
+../../../build/yolo_ros2/UNKNOWN.egg-info/dependency_links.txt
+../../../build/yolo_ros2/UNKNOWN.egg-info/top_level.txt
+test/test_copyright.py
+test/test_flake8.py
+test/test_pep257.py

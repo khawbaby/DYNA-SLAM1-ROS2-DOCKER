@@ -1,0 +1,3 @@
+source;share/yolo_ros2/hook/pythonpath.ps1
+source;share/yolo_ros2/hook/pythonpath.dsv
+source;share/yolo_ros2/hook/pythonpath.sh

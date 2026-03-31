@@ -123,7 +123,8 @@ public:
 #endif
 
 public:
-
+    std::vector<cv::Point3f> dynamicCurr;
+    std::vector<cv::Point3f> dynamicPrev;
     cv::Mat mLastDynamicMask;
     cv::Mat mCurrentDynamicMask;
 
@@ -157,7 +158,7 @@ public:
     // Current Frame
     Frame mCurrentFrame;
     Frame mLastFrame;
-
+    Frame mPrevFrame;
 
     cv::Mat mImGray;
 
