@@ -4,10 +4,13 @@
 #include "DynamicTracker.h"
 #include "Frame.h"
 #include "Hungarian.h"
+#include <utility>
+#include <unordered_map>
 
 namespace ORB_SLAM3
 {
 using GridType = std::vector<std::size_t>[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+
 DynamicTracker::DynamicTracker() : next_id(0) {}
 
 float DynamicTracker::computeSigma(const std::vector<float>& data)
@@ -102,135 +105,125 @@ int DynamicTracker::greedyMatching(DynamicObject& newObj) {
     return bestIdx;
 }
 
-// float DynamicTracker::computeCost(const Object& track, const Object& det,
-//                   float sigma_d, float sigma_m, float sigma_s)
-// {
-//     float dist = cv::norm(track.centroid3D - det.centroid3D);
 
-//     float motion = cv::norm(track.velocity - det.velocity);
+void DynamicTracker::rstVars(){
+    //dynamic_info = DynamicPtsInfo();
+}
 
-//     float sizeDiff = std::abs(track.size - det.size);
-
-//     float d_score = (dist * dist) / (sigma_d * sigma_d);
-//     float m_score = (motion * motion) / (sigma_m * sigma_m);
-//     float s_score = (sizeDiff * sizeDiff) / (sigma_s * sigma_s);
-
-//     return d_score + m_score + s_score;
-// }
-
-
-void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame)
+void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame, 
+    const std::vector<cv::Point3f>& _currPoints,
+    const std::vector<cv::Point3f>& _prevPoints, 
+    const std::vector<std::pair<int,int>>& _dynamicMatchesIndex)
 {
+    
+    std::cout << "curr size: " << _currPoints.size() << std::endl;
+    std::cout << "prev size: " << _prevPoints.size() << std::endl;
+    std::cout << "matches size: " << _dynamicMatchesIndex.size() << std::endl;
 
-    auto &currPoints = mCurrentFrame.mvDynamicPoints3D;
-    auto &prevPoints = mLastFrame.mvDynamicPoints3D;
-    auto &dynamicGrid = mCurrentFrame.mDynamicGrid;
-    auto &dynamicPos = mCurrentFrame.mvDynamicGridPos;
+    dynamic_info.currPoints3D = _currPoints;
+    dynamic_info.prevPoints3D = _prevPoints;
+    dynamic_info.dynamicMatchesIndex = _dynamicMatchesIndex;
 
     // Step 1: cluster indices
     std::vector<std::vector<int>> clusters;
-    ClusterPoints(currPoints, prevPoints, dynamicGrid, dynamicPos, clusters);
-    //std::cout << "Number of CurrentObjects created: " << clusters.size() << std::endl;
+    ClusterPoints(mCurrentFrame, mCurrentFrame.mGrid, mCurrentFrame.mvGridPos, clusters);
+    std::cout << "Number of Current Objects created: " << clusters.size() << std::endl;
     
     // Clusters consists of vector of points
-    for(const auto& cluster : clusters)
-    {
-        std::vector<cv::Point3f> objCurr;
-        std::vector<cv::Point3f> objPrev;
+    // for(const auto& cluster : clusters)
+    // {
+    //     std::vector<cv::Point3f> objCurr;
+    //     std::vector<cv::Point3f> objPrev;
 
-        for(int idx : cluster)
-        {
-            objCurr.push_back(currPoints[idx]);
-            objPrev.push_back(prevPoints[idx]);
-        }
+    //     for(int idx : cluster)
+    //     {
+    //         objCurr.push_back(mCurrentFrame.mvPoints3D[idx]);
+    //         objPrev.push_back(mLastFrame.mvPoints3D[idx]);
+    //     }
 
-        DynamicObject obj(next_id++);
-        obj.Update(objCurr, objPrev);
-        obj.ComputeCentroid();
-        obj.FitEllipsoid();
-        CurrentObjects.push_back(obj);
-    }
-    mCurrentFrame.mDynamicObjects = CurrentObjects;
-    PrevObjects = mLastFrame.mDynamicObjects;
+    //     DynamicObject obj(next_id++);
+    //     obj.Update(objCurr, objPrev);
+    //     obj.ComputeCentroid();
+    //     obj.FitEllipsoid();
+    //     CurrentObjects.push_back(obj);
+    // }
 
-    if (mLastFrame.mDynamicObjects.empty())
-        std::cout << "LAST FRAME NO DYNAMIC OBJECT" << std::endl;
 
-    // Compute for all pairs
-    std::vector<float> dist_vect, motion_vect, size_vect;
-    for(int i = 0; i < PrevObjects.size(); i++)
-    {
-        for(int j = 0; j < CurrentObjects.size(); j++)
-        {
-            float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
+    // // Compute for all pairs
+    // std::vector<float> dist_vect, motion_vect, size_vect;
+    // for(int i = 0; i < PrevObjects.size(); i++)
+    // {
+    //     for(int j = 0; j < CurrentObjects.size(); j++)
+    //     {
+    //         float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
 
-            cv::Point3f vel_old = PrevObjects[i].centroid3D - PrevObjects[i].prevCentroid3D;
-            cv::Point3f predicted = PrevObjects[i].centroid3D + vel_old;
+    //         cv::Point3f vel_old = PrevObjects[i].centroid3D - PrevObjects[i].prevCentroid3D;
+    //         cv::Point3f predicted = PrevObjects[i].centroid3D + vel_old;
 
-            float motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
+    //         float motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
 
-            float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
+    //         float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
 
-            dist_vect.push_back(dist);
-            motion_vect.push_back(motion);
-            size_vect.push_back(sizeDiff);
+    //         dist_vect.push_back(dist);
+    //         motion_vect.push_back(motion);
+    //         size_vect.push_back(sizeDiff);
 
-            // std::cout
-            //     << " dist: " << dist << std::setw(25)
-            //     << " motion: " << motion << std::setw(25)
-            //     << " sizeDiff: " << sizeDiff << std::endl;
-            // std::cout << std::endl;
-        }
-    }
+    //         // std::cout
+    //         //     << " dist: " << dist << std::setw(25)
+    //         //     << " motion: " << motion << std::setw(25)
+    //         //     << " sizeDiff: " << sizeDiff << std::endl;
+    //         // std::cout << std::endl;
+    //     }
+    // }
 
-    // Compute sigma
-    float sigma_d = computeSigma(dist_vect);
-    float sigma_m = computeSigma(motion_vect);
-    float sigma_s = computeSigma(size_vect);
+    // // Compute sigma
+    // float sigma_d = computeSigma(dist_vect);
+    // float sigma_m = computeSigma(motion_vect);
+    // float sigma_s = computeSigma(size_vect);
     
-    sigma_d = std::max(sigma_d, 1e-3f);
-    sigma_m = std::max(sigma_m, 1e-3f);
-    sigma_s = std::max(sigma_s, 1e-3f);
+    // sigma_d = std::max(sigma_d, 1e-3f);
+    // sigma_m = std::max(sigma_m, 1e-3f);
+    // sigma_s = std::max(sigma_s, 1e-3f);
 
-    int N = PrevObjects.size();
-    int M = CurrentObjects.size();
+    // int N = PrevObjects.size();
+    // int M = CurrentObjects.size();
 
-    std::vector<std::vector<float>> costMatrix(N, std::vector<float>(M, 1e6));
+    // std::vector<std::vector<float>> costMatrix(N, std::vector<float>(M, 1e6));
 
-    // Fill up Cost Matrix
-    for(int i = 0; i < N; i++)
-    {
-        for(int j = 0; j < M; j++)
-        {
-            float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
+    // // Fill up Cost Matrix
+    // for(int i = 0; i < N; i++)
+    // {
+    //     for(int j = 0; j < M; j++)
+    //     {
+    //         float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
 
-            cv::Point3f vel_old = PrevObjects[i].centroid3D - PrevObjects[i].prevCentroid3D;
-            cv::Point3f predicted = PrevObjects[i].centroid3D + vel_old;
+    //         cv::Point3f vel_old = PrevObjects[i].centroid3D - PrevObjects[i].prevCentroid3D;
+    //         cv::Point3f predicted = PrevObjects[i].centroid3D + vel_old;
 
-            float motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
+    //         float motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
 
-            float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
+    //         float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
 
-            float d_score = (dist*dist)/(sigma_d*sigma_d);
-            float m_score = (motion*motion)/(sigma_m*sigma_m);
-            float s_score = (sizeDiff*sizeDiff)/(sigma_s*sigma_s);
+    //         float d_score = (dist*dist)/(sigma_d*sigma_d);
+    //         float m_score = (motion*motion)/(sigma_m*sigma_m);
+    //         float s_score = (sizeDiff*sizeDiff)/(sigma_s*sigma_s);
 
-            float totalScore = d_score + m_score + s_score;
-            // std::cout
-            //     << " dist: " << d_score << std::setw(25)
-            //     << " motion: " << m_score << std::setw(25)
-            //     << " sizeDiff: " << s_score << std::endl;
-            // std::cout << std::endl;
+    //         float totalScore = d_score + m_score + s_score;
+    //         // std::cout
+    //         //     << " dist: " << d_score << std::setw(25)
+    //         //     << " motion: " << m_score << std::setw(25)
+    //         //     << " sizeDiff: " << s_score << std::endl;
+    //         // std::cout << std::endl;
 
-            // Gating
-            if(totalScore < 50.0f)
-                costMatrix[i][j] = totalScore;
-        }
-    }
+    //         // Gating
+    //         if(totalScore < 50.0f)
+    //             costMatrix[i][j] = totalScore;
+    //     }
+    // }
     
-    //std::vector<int> assignment = hungarian_solver.solve(costMatrix);
+    // //std::vector<int> assignment = hungarian_solver.solve(costMatrix);
 
-    std::vector<bool> usedDetections(M, false);
+    // std::vector<bool> usedDetections(M, false);
     
 }
 
@@ -293,103 +286,132 @@ void DynamicTracker::ClusterPoints(const std::vector<cv::Point3f>& currPoints, c
 }
 
 void DynamicTracker::ClusterPoints(
-    const std::vector<cv::Point3f>& currPoints,
-    const std::vector<cv::Point3f>& prevPoints,
-    const GridType& dynamicGrid,
-    const std::vector<std::pair<int,int>>& gridPos,
+    Frame& mCurrentFrame,
+    const GridType& Grid,
+    const std::vector<std::pair<int,int>>& GridPos,
     std::vector<std::vector<int>>& clusters)
-{
-    const float DIST_THRESH   = 0.5f;
-    const float MOTION_THRESH = 0.3f;
-
-    int N = currPoints.size();
-    std::vector<bool> visited(N, false);
-
-    for(int i = 0; i < N; i++)
     {
-        if(visited[i]) continue;
+        const float DIST_THRESH   = 0.5f;
+        const float MOTION_THRESH = 0.3f;
 
-        if(std::isnan(currPoints[i].x) || std::isnan(prevPoints[i].x))
-            continue;
-
-        std::vector<int> cluster;
-        std::queue<int> q;
-
-        q.push(i);
-        visited[i] = true;
-
-        // Queue for FIFO 
-        while(!q.empty())
+        int N = GridPos.size();
+        std::vector<bool> visited(N, false);
+        std::cout << "Hi" << std::endl;
+        // Map to a pair of <kp_idx, filtered_idx>
+        std::unordered_map<int,int> currToMatchIdx;
+        //std::cout << "Matches" << dynamic_info.dynamicMatchesIndex.size() << std::endl;
+        for(int i = 0; i < dynamic_info.dynamicMatchesIndex.size(); i++)
         {
-            int idx = q.front();
-            q.pop();
+            auto it_curr = dynamic_info.dynamicMatchesIndex[i];
+            currToMatchIdx[it_curr.second] = i;
+        }
 
-            cluster.push_back(idx);
-            if(prevPoints.empty()) return;
+        // i is index of filtered subset
+        for(int i = 0; i < dynamic_info.dynamicMatchesIndex.size(); i++)
+        {
+            // Map MatchIndex[i] to index of mvKeys (Take current)
+            auto it_kp_idx = dynamic_info.dynamicMatchesIndex[i];
+            int kp_idx = it_kp_idx.second;
+            if(visited[kp_idx]) continue;
 
-            // if(idx>=prevPoints.size()) 
-            //     continue;
-            //std::cout << "idx: " << idx << std::endl;
-            cv::Point3f flow_i = currPoints[idx] - prevPoints[idx];
-            float flow_mag = cv::norm(flow_i);
-
-            if(flow_mag > 2.0f)   // tune this
+            if(std::isnan(dynamic_info.currPoints3D[i].x) || std::isnan(dynamic_info.prevPoints3D[i].x))
                 continue;
 
-            // Get correct grid cell of THIS point
-            int gx = gridPos[idx].first;
-            int gy = gridPos[idx].second;
-            // std::cout << "gx: " << gx << "   gy: " << gy << std::endl;
-            // Explore neighboring cells (3x3 cells around the center)
-            for(int dx = -1; dx <= 1; dx++)
+            std::vector<int> cluster;
+            std::queue<int> q;
+
+            q.push(kp_idx);
+            visited[kp_idx] = true;
+
+            // Queue for FIFO 
+            while(!q.empty())
             {
-                for(int dy = -1; dy <= 1; dy++)
-                {
-                    int nx = gx + dx;
-                    int ny = gy + dy;
+                // idx is index of mvKeys
+                int kp = q.front();
+                q.pop();
 
-                    if(nx < 0 || ny < 0 || 
-                       nx >= FRAME_GRID_COLS || ny >= FRAME_GRID_ROWS)
-                        continue;
+                cluster.push_back(kp);  // store mvKeys index
 
-                    const auto& cell = dynamicGrid[nx][ny];
+                // dyn_i, to compare reference point to all neighbouring points
+                auto it_i = currToMatchIdx.find(kp);
+                if(it_i == currToMatchIdx.end()) continue;
+                int dyn_i = it_i->second;
+
+                if(dynamic_info.prevPoints3D.empty()) return;
+
+                // if(idx>=prevPoints.size()) 
+                //     continue;
+                //std::cout << "idx: " << idx << std::endl;
+                cv::Point3f flow_i = dynamic_info.currPoints3D[dyn_i] - dynamic_info.prevPoints3D[dyn_i];
+                float flow_mag = cv::norm(flow_i);
+
+                if(flow_mag > 2.0f)   // tune this
+                    continue;
                     
-                    // Index of keypoints in cell (NOT ITERATING IDX)
-                    for(size_t j : cell)
+                // Get correct grid cell of THIS point
+                int gx = GridPos[kp].first;
+                int gy = GridPos[kp].second;
+     
+                // Explore neighboring cells (3x3 cells around the center)
+                for(int dx = -1; dx <= 1; dx++)
+                {
+                    for(int dy = -1; dy <= 1; dy++)
                     {
-                        if(j >= currPoints.size() || j >= prevPoints.size())
-                        {
-                            // std::cout << "INVALID INDEX: " << j << std::endl;
-                            continue;
-                        }
-                        if(visited[j]) continue;
+                        int nx = gx + dx;
+                        int ny = gy + dy;
 
-                        if(std::isnan(currPoints[j].x) || std::isnan(prevPoints[j].x))
+                        if(nx < 0 || ny < 0 || 
+                        nx >= FRAME_GRID_COLS || ny >= FRAME_GRID_ROWS)
                             continue;
-                        
-                        // Check distance between points in real life
-                        float spatial_dist = cv::norm(currPoints[idx] - currPoints[j]);
-                        if(spatial_dist > DIST_THRESH)
-                            continue;
-                        
-                        // Check if current neighbouring point is moving together with reference point
-                        cv::Point3f flow_j = currPoints[j] - prevPoints[j];
-                        float motion_dist = cv::norm(flow_i - flow_j);
 
-                        if(motion_dist < MOTION_THRESH)
+                        const auto& cell = Grid[nx][ny];
+                        
+                        // Index of keypoints in cell (NOT ITERATING IDX)
+                        for(size_t j : cell)
                         {
-                            visited[j] = true;
-                            q.push(j);
+                            // j is mvKeys index
+
+                            if(!mCurrentFrame.mvbDynamic[j]) continue;
+                            if(visited[j]) continue;
+                            
+                            // dyn_j is for neighbouring points to match to dyn_i
+                            // find corresponding dynamic match index
+                            auto it_j = currToMatchIdx.find(j);
+                            if(it_j == currToMatchIdx.end()) continue;
+
+                            int dyn_j = it_j->second;
+
+                            if(std::isnan(dynamic_info.currPoints3D[dyn_j].x) ||
+                            std::isnan(dynamic_info.prevPoints3D[dyn_j].x))
+                                continue;
+
+                            float spatial_dist = cv::norm(
+                                dynamic_info.currPoints3D[dyn_i] -
+                                dynamic_info.currPoints3D[dyn_j]
+                            );
+
+                            if(spatial_dist > DIST_THRESH) continue;
+
+                            cv::Point3f flow_j =
+                                dynamic_info.currPoints3D[dyn_j] -
+                                dynamic_info.prevPoints3D[dyn_j];
+
+                            float motion_dist = cv::norm(flow_i - flow_j);
+
+                            if(motion_dist < MOTION_THRESH)
+                            {
+                                visited[j] = true;
+                                q.push(j);
+                            }
                         }
                     }
                 }
             }
+            
+            // cluster consists of vector<int> of indices of keypoints detected in Current Frame
+            if(cluster.size() >= 5)
+                clusters.push_back(cluster);
         }
-        
-        // cluster consists of vector<int> of indices of keypoints detected in Current Frame
-        if(cluster.size() >= 5)
-            clusters.push_back(cluster);
     }
-}
 
 }

@@ -6,6 +6,8 @@
 #include <iomanip>
 #include "Frame.h"
 #include "Hungarian.h"
+#include <utility>
+#include <unordered_map>
 
 namespace ORB_SLAM3
 {
@@ -22,22 +24,39 @@ class Settings;
 #define FRAME_GRID_COLS 64
 using GridType = std::vector<std::size_t>[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
+struct DynamicPtsInfo {
+        std::vector<cv::Point3f> prevPoints3D;
+        std::vector<cv::Point3f> currPoints3D;
+        //std::vector<size_t> dynamicGrid;
+        //std::vector<std::pair<int,int>> dynamicPos;
+        std::vector<std::pair<int,int>> dynamicMatchesIndex;
+
+};
+
 class DynamicTracker {
 public:
     std::vector<DynamicObject> CurrentObjects;
     std::vector<DynamicObject> PrevObjects;
+    DynamicPtsInfo dynamic_info;
+    
     int next_id;
 
     DynamicTracker();
 
+
     void ProcessFrame(
         Frame& mCurrentFrame,
-        Frame& mLastFrame
+        Frame& mLastFrame,
+        const std::vector<cv::Point3f>& _currPoints,
+        const std::vector<cv::Point3f>& _prevPoints,
+        const std::vector<std::pair<int,int>>& _dynamicMatchesIndex
     );
 
 private:
     Hungarian hungarian_solver;
-    
+
+    void rstVars(); 
+
     void ClusterPoints(
         const std::vector<cv::Point3f>& currPoints,
         const std::vector<cv::Point3f>& prevPoints,
@@ -45,11 +64,10 @@ private:
     );
 
     void ClusterPoints(
-    const std::vector<cv::Point3f>& currPoints,
-    const std::vector<cv::Point3f>& prevPoints,
-    const GridType& dynamicGrid,
-    const std::vector<std::pair<int,int>>& dynamicGridPos,
-    std::vector<std::vector<int>>& clusters
+        Frame& mCurrentFrame,
+        const GridType& Grid,
+        const std::vector<std::pair<int,int>>& GridPos,
+        std::vector<std::vector<int>>& clusters
     );
 
     float computeSigma(const std::vector<float>& data);

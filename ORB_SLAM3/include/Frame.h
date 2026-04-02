@@ -262,6 +262,7 @@ public:
     static float mfGridElementWidthInv;
     static float mfGridElementHeightInv;
     std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+    std::vector<std::pair<int,int>> mvGridPos;
     std::vector<std::size_t> mDynamicGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
     std::vector<std::pair<int,int>> mvDynamicGridPos;
     
@@ -342,6 +343,7 @@ private:
 public:
     GeometricCamera* mpCamera, *mpCamera2;
     cv::Mat mImGray;
+    cv::Mat mImGrayLast;
     //Number of KeyPoints extracted in the left and right images
     int Nleft, Nright;
     //Number of Non Lapping Keypoints
@@ -353,6 +355,7 @@ public:
     //For stereo fisheye matching
     static cv::BFMatcher BFmatcher;
 
+    
     //Triangulated stereo observations using as reference the left camera. These are
     //computed during ComputeStereoFishEyeMatches
     std::vector<Eigen::Vector3f> mvStereo3Dpoints;

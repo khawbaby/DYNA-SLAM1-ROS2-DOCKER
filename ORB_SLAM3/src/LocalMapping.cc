@@ -491,7 +491,7 @@ void LocalMapping::CreateNewMapPoints()
                 continue;
 
             if(mpCurrentKeyFrame->mvbDynamic[idx1] || pKF2->mvbDynamic[idx2]) {
-                std::cout << "DYNAMIC POINT DETECTED..... SKIPPING" << std::endl;
+                //std::cout << "DYNAMIC POINT DETECTED..... SKIPPING" << std::endl;
                 continue;
             }
                 

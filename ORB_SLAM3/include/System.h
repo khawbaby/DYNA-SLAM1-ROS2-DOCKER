@@ -39,7 +39,7 @@
 #include "Viewer.h"
 #include "ImuTypes.h"
 #include "Settings.h"
-
+#include "DynamicTracker.h"
 
 namespace ORB_SLAM3
 {
@@ -222,6 +222,7 @@ private:
     // performs relocalization if tracking fails.
     Tracking* mpTracker;
 
+    DynamicTracker* mpDynamicTracker;
     // Local Mapper. It manages the local map and performs local bundle adjustment.
     LocalMapping* mpLocalMapper;
 

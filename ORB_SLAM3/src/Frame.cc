@@ -70,16 +70,12 @@ Frame::Frame(const Frame &frame)
      monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
      mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
-     mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false)
+     mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false),mvbDynamic(frame.mvbDynamic), 
+     mvPoints3D(frame.mvPoints3D), mDynamicObjects(frame.mDynamicObjects),
+     mvDynamicKeys(frame.mvDynamicKeys), mvDynamicPoints3D(frame.mvDynamicPoints3D),
+     mvDynamicGridPos(frame.mvDynamicGridPos), N_dynamic(frame.N_dynamic)
 {
-    mvbDynamic = frame.mvbDynamic;
-    mvPoints3D = frame.mvPoints3D;
-    mDynamicObjects = frame.mDynamicObjects;
-    mImGray = frame.mImGray;
-    mvDynamicKeys = frame.mvDynamicKeys;
-    mvDynamicPoints3D = frame.mvDynamicPoints3D;
-    mvDynamicGridPos = frame.mvDynamicGridPos;
-    N_dynamic = frame.N_dynamic;
+    mImGrayLast = frame.mImGray.clone();
 
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++){
@@ -228,7 +224,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     // Dynamic Mask 
     mDynamicMask = dynamicMask.clone();
-    //mImGray = imGray.clone();
+    mImGray = imGray.clone();
     // ORB extraction
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
@@ -513,7 +509,7 @@ void Frame::AssignFeaturesToGrid()
             }
         }
 
-
+    mvGridPos.resize(N);
 
     for(int i=0;i<N;i++)
     {
@@ -523,6 +519,8 @@ void Frame::AssignFeaturesToGrid()
 
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
+            // Store grid position
+            mvGridPos[i] = {nGridPosX, nGridPosY};
             if(Nleft == -1 || i < Nleft)
                 mGrid[nGridPosX][nGridPosY].push_back(i);
             else
