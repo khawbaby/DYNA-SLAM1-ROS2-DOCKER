@@ -6,7 +6,7 @@
 #include "Hungarian.h"
 #include <utility>
 #include <unordered_map>
-
+#include <limits>
 namespace ORB_SLAM3
 {
 using GridType = std::vector<std::size_t>[FRAME_GRID_COLS][FRAME_GRID_ROWS];
@@ -110,15 +110,28 @@ void DynamicTracker::rstVars(){
     //dynamic_info = DynamicPtsInfo();
 }
 
+void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
+    const std::vector<std::pair<int,int>>& _idx_matches,
+    const std::vector<std::pair<cv::Point3f, cv::Point3f>>& _optical_flow_matches)
+{
+    std::cout << "Cluster V2" << std::endl;
+    optical_flow_matches = _optical_flow_matches;
+    idx_matches = _idx_matches;
+    // Step 1: cluster indices
+    std::vector<std::vector<int>> clusters;
+    ClusterPoints2(mCurrentFrame, mLastFrame, clusters);
+    std::cout << "Number of Current Objects created: " << clusters.size() << std::endl;
+}
+
 void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame, 
     const std::vector<cv::Point3f>& _currPoints,
     const std::vector<cv::Point3f>& _prevPoints, 
     const std::vector<std::pair<int,int>>& _dynamicMatchesIndex)
 {
     
-    std::cout << "curr size: " << _currPoints.size() << std::endl;
-    std::cout << "prev size: " << _prevPoints.size() << std::endl;
-    std::cout << "matches size: " << _dynamicMatchesIndex.size() << std::endl;
+    // std::cout << "curr size: " << _currPoints.size() << std::endl;
+    // std::cout << "prev size: " << _prevPoints.size() << std::endl;
+    // std::cout << "matches size: " << _dynamicMatchesIndex.size() << std::endl;
 
     dynamic_info.currPoints3D = _currPoints;
     dynamic_info.prevPoints3D = _prevPoints;
@@ -127,7 +140,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     // Step 1: cluster indices
     std::vector<std::vector<int>> clusters;
     ClusterPoints(mCurrentFrame, mCurrentFrame.mGrid, mCurrentFrame.mvGridPos, clusters);
-    std::cout << "Number of Current Objects created: " << clusters.size() << std::endl;
+    //std::cout << "Number of Current Objects created: " << clusters.size() << std::endl;
     
     // Clusters consists of vector of points
     // for(const auto& cluster : clusters)
@@ -232,54 +245,146 @@ float DynamicTracker::Distance(const cv::Point3f& a, const cv::Point3f& b)
     return cv::norm(a - b);
 }
 
-void DynamicTracker::ClusterPoints(const std::vector<cv::Point3f>& currPoints, const std::vector<cv::Point3f>& prevPoints,std::vector<std::vector<int>>& clusters)
+void DynamicTracker::ClusterPoints2(
+    Frame& mCurrentFrame,
+    Frame& mLastFrame,
+    std::vector<std::vector<int>>& clusters
+)
 {
-    const float DIST_THRESH   = 0.5f;  // meters
-    const float MOTION_THRESH = 0.3f;  // meters (tune this)
 
-    int N = currPoints.size();
-    std::vector<bool> visited(N, false);
+    int N = optical_flow_matches.size();
+    int M = mCurrentFrame.N_dynamic;
+
+    std::vector<bool> visited(M, false);
+    std::cout << "Cluster V2" << std::endl;
 
     for(int i = 0; i < N; i++)
     {
-        if(visited[i]) continue;
+        // where is this in mvDynamicPoints3D, index for points
+        int prev_kp_idx = idx_matches[i].first;
+        int curr_kp_idx = idx_matches[i].second;
+       
+        if(visited[curr_kp_idx]) continue;
 
-        // skip invalid points (NaN check)
-        if(std::isnan(currPoints[i].x) || std::isnan(prevPoints[i].x))
+        if(std::isnan(mCurrentFrame.mvDynamicPoints3D[curr_kp_idx].x) || std::isnan(mLastFrame.mvDynamicPoints3D[prev_kp_idx].x))
             continue;
 
         std::vector<int> cluster;
-        cluster.push_back(i);
-        visited[i] = true;
+        std::queue<int> q;
 
-        // compute motion of seed point
-        cv::Point3f flow_i = currPoints[i] - prevPoints[i];
+        q.push(curr_kp_idx);
+        visited[curr_kp_idx] = true;
 
-        for(int j = i + 1; j < N; j++)
+        // Queue for FIFO 
+        while(!q.empty())
         {
-            if(visited[j]) continue;
-
-            if(std::isnan(currPoints[j].x) || std::isnan(prevPoints[j].x))
-                continue;
-
-            // spatial distance
-            float spatial_dist = cv::norm(currPoints[i] - currPoints[j]);
-
-            if(spatial_dist > DIST_THRESH)
-                continue;
-
-            // motion consistency
-            cv::Point3f flow_j = currPoints[j] - prevPoints[j];
-            float motion_dist = cv::norm(flow_i - flow_j);
-
-            if(motion_dist < MOTION_THRESH)
+            // Start as reference point 
+            int curr_idx = q.front();
+            int prev_idx;
+            for(const auto& m : idx_matches)
             {
-                cluster.push_back(j);
-                visited[j] = true;
+                if(m.second == curr_idx)
+                {
+                    prev_idx = m.first;
+                    break;
+                }
+            }
+            q.pop();
+
+            cluster.push_back(curr_idx);  // store mvKeys index
+        
+            // Reference flow
+            cv::Point3f flow_i = mCurrentFrame.mvDynamicPoints3D[curr_idx] - mLastFrame.mvDynamicPoints3D[prev_idx];
+            float flow_mag = cv::norm(flow_i);
+            
+            if(flow_mag > 2.0f)   // tune this
+                continue;
+
+            std::cout << "flow_i:\t" << flow_i << std::endl;
+
+            // Get correct grid cell of THIS point
+            int gx = mCurrentFrame.mvDynamicGridPos[curr_idx].first;
+            int gy = mCurrentFrame.mvDynamicGridPos[curr_idx].second;
+            
+            if (gx < 0 || gy < 0) continue;
+
+            // Explore neighboring cells (3x3 cells around the center)
+            for(int dx = -1; dx <= 1; dx++)
+            {
+                for(int dy = -1; dy <= 1; dy++)
+                {
+                    int nx = gx + dx;
+                    int ny = gy + dy;
+
+                    if(nx < 0 || ny < 0 || 
+                    nx >= FRAME_GRID_COLS || ny >= FRAME_GRID_ROWS)
+                        continue;
+
+                    const auto& cell = mCurrentFrame.mDynamicGrid[nx][ny];
+                    
+                    // Index of keypoints in cell (NOT ITERATING IDX)
+                    for(size_t j : cell)
+                    { 
+                        int j_int ;
+                        if(j <= std::numeric_limits<int>::max())
+                        {
+                            j_int = static_cast<int>(j);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                        if(visited[j_int]) continue;
+
+                        // Check if current point has prev correspondence
+                        // If no prev found, discard
+                        bool found = false;
+                        cv::Point3f Potential_Pt_prev;
+                        int prev_j;
+                        // Find prev for potential point
+                        for(const auto& m : idx_matches)
+                        {
+                            if(m.second == j_int)
+                            {
+                                std::cout << "Curr Idx: \t" << m.second << "\tj_int: \t" << j_int << std::endl;
+                                prev_j = m.first;
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!found) continue;
+
+                        // Dist between reference and potential 
+                        float spatial_dist = cv::norm(
+                            mCurrentFrame.mvDynamicPoints3D[curr_idx] -
+                            mCurrentFrame.mvDynamicPoints3D[j_int]
+                        );
+
+                        if(spatial_dist > DIST_THRESH) continue;
+                        
+                        // Flow between curr and prev (potential point)
+                        cv::Point3f flow_j =
+                            mCurrentFrame.mvDynamicPoints3D[j_int] -
+                            mLastFrame.mvDynamicPoints3D[prev_j];
+                        
+                        std::cout << "flow_j:\t" << flow_j << std::endl;
+                        
+                        float motion_dist = cv::norm(flow_i - flow_j);
+                        
+                        std::cout << "Motion:\t" << motion_dist << "\n" << std::endl;
+
+                        if(motion_dist < MOTION_THRESH)
+                        {
+                            visited[j_int] = true;
+                            q.push(j_int);
+                        }
+                    }
+                }
             }
         }
-
-        // keep only meaningful clusters
+        
+        // cluster consists of vector<int> of indices of keypoints detected in Current Frame
         if(cluster.size() >= 5)
             clusters.push_back(cluster);
     }

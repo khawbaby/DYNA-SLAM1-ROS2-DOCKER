@@ -857,6 +857,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
     for(int i=0; i<N; i++)
     {
+        if(pFrame->mvbDynamic[i]) continue;
         MapPoint* pMP = pFrame->mvpMapPoints[i];
         if(pMP)
         {

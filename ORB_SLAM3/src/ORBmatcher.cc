@@ -84,6 +84,7 @@ namespace ORB_SLAM3
                     for(vector<size_t>::const_iterator vit=vIndices.begin(), vend=vIndices.end(); vit!=vend; vit++)
                     {
                         const size_t idx = *vit;
+                        
 
                         if(F.mvpMapPoints[idx])
                             if(F.mvpMapPoints[idx]->Observations()>0)
@@ -503,7 +504,7 @@ namespace ORB_SLAM3
                 const size_t idx = *vit;
                 if(vpMatched[idx])
                     continue;
-
+                    
                 const int &kpLevel= pKF->mvKeysUn[idx].octave;
 
                 if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)

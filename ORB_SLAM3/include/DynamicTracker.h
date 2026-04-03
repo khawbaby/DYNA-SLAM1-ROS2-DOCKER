@@ -8,7 +8,7 @@
 #include "Hungarian.h"
 #include <utility>
 #include <unordered_map>
-
+#include <limits>
 namespace ORB_SLAM3
 {
 
@@ -30,7 +30,6 @@ struct DynamicPtsInfo {
         //std::vector<size_t> dynamicGrid;
         //std::vector<std::pair<int,int>> dynamicPos;
         std::vector<std::pair<int,int>> dynamicMatchesIndex;
-
 };
 
 class DynamicTracker {
@@ -38,11 +37,25 @@ public:
     std::vector<DynamicObject> CurrentObjects;
     std::vector<DynamicObject> PrevObjects;
     DynamicPtsInfo dynamic_info;
-    
+    std::vector<std::pair<cv::Point3f, cv::Point3f>> optical_flow_matches;
+    std::vector<std::pair<int,int>> idx_matches;
     int next_id;
+    const float DIST_THRESH   = 0.5f;
+    const float MOTION_THRESH = 0.3f;
 
     DynamicTracker();
 
+    bool isSamePoint(const cv::Point3f& a, const cv::Point3f& b, float eps = 1e-3f)
+    {
+        return cv::norm(a - b) < eps;
+    }
+    
+    void ProcessFrame(
+        Frame& mCurrentFrame,
+        Frame& mLastFrame,
+        const std::vector<std::pair<int,int>>& _idx_matches, 
+        const std::vector<std::pair<cv::Point3f,cv::Point3f>>& _optical_flow_matches
+    );
 
     void ProcessFrame(
         Frame& mCurrentFrame,
@@ -56,10 +69,10 @@ private:
     Hungarian hungarian_solver;
 
     void rstVars(); 
-
-    void ClusterPoints(
-        const std::vector<cv::Point3f>& currPoints,
-        const std::vector<cv::Point3f>& prevPoints,
+    
+    void ClusterPoints2(
+        Frame& mCurrentFrame,
+        Frame& mLastFrame,
         std::vector<std::vector<int>>& clusters
     );
 

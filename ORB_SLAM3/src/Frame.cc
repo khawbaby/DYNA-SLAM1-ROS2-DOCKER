@@ -239,7 +239,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     mvbDynamic = std::vector<bool>(mvKeys.size(), false);
 
     // cout << "size of keyframe matrix: " << mvbDynamic.size() << endl;
-    int dilation_size = 10;
+    int dilation_size = 7;
 
     // Morphological Actions
     cv::Mat kernel = cv::getStructuringElement(
@@ -268,6 +268,8 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
         if (val == 1)
         {
             mvbDynamic[i] = false;
+            _mvKeys.push_back(mvKeys[i]);
+            _mDescriptors.push_back(mDescriptors.row(i));
         } else {
             mvbDynamic[i] = true;
             _mvDynamicKeys.push_back(mvKeys[i]);
@@ -275,6 +277,8 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
         }
     }
 
+    mvKeys = _mvKeys;
+    mDescriptors = _mDescriptors;
     mvDynamicKeys = _mvDynamicKeys; 
     mDynamicDescriptors = _mDynamicDescriptors;
 
@@ -596,13 +600,12 @@ void Frame::VisualizeGrid(const cv::Mat &imGray) {
 
     int i =0;
     for(const auto &kp : mvKeys) {
-        if (mvbDynamic[i]) {
-            cv::circle(vis, kp.pt, 2, cv::Scalar(0,0,255), -1); // red
-        } else {
-            cv::circle(vis, kp.pt, 2, cv::Scalar(0,255,0), -1); // green
-        }
-        i = i+1;
+        cv::circle(vis, kp.pt, 2, cv::Scalar(0,255,0), -1); // green
     } 
+
+    for(const auto &kp : mvDynamicKeys) {
+        cv::circle(vis, kp.pt, 2, cv::Scalar(0,0,255), -1); // red
+    }
 
     cv::imshow("Dynamic Grid Visualization", vis);
     cv::waitKey(1);

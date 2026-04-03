@@ -1955,10 +1955,89 @@ void Tracking::Track()
     // =====================
     // DYNAMIC TRACKING HERE
     // =====================
+    // std::vector<cv::Point2f> prevPts, currPts;
+    // std::vector<int> prevIdx, currIdx;
+    // bool empty_vect = false;
+    // std::vector<pair<int,int>> dynamicMatchesIndex;
+
+    // if (mLastFrame.mImGrayLast.empty() || mLastFrame.mvDynamicKeys.empty() || mCurrentFrame.mvDynamicKeys.empty())
+    //     empty_vect = true;
+    
+    // // std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
+    // // std::cout << "LAST FRAME DYNAMIC KEYS: " << mLastFrame.mvDynamicKeys.size() << std::endl;
+    // if (!empty_vect) {
+    //     for(int i = 0; i < mLastFrame.N; i++)
+    //     {
+    //         if(mLastFrame.mvbDynamic[i])
+    //             prevPts.push_back(mLastFrame.mvKeys[i].pt);
+    //             prevIdx.push_back(i); 
+    //     }
+    
+    //     std::vector<uchar> status;
+    //     std::vector<float> err;
+        
+    //     cv::calcOpticalFlowPyrLK(
+    //         mLastFrame.mImGrayLast, mCurrentFrame.mImGray,
+    //         prevPts, currPts,
+    //         status, err
+    //     );
+
+    //     // 3D Correspondeces (Tracked Pairs)
+    //     vector<cv::Point3f> dynamicPrev;
+    //     vector<cv::Point3f> dynamicCurr;
+
+    //     for(int k = 0; k < prevPts.size(); k++)
+    //     {
+    //         // Cant find this point in curr Frame from optical flow
+    //         if(!status[k]) continue;
+            
+    //         // Found tracked point in current frame
+    //         int idx_prev = prevIdx[k];  // from your earlier mapping
+
+    //         // find nearest keypoint in current frame
+    //         int idx_curr = -1;
+    //         float bestDist = 5.0f;
+
+    //         for(int i = 0; i < mCurrentFrame.N; i++)
+    //         {
+    //             if(!mCurrentFrame.mvbDynamic[i]) continue;
+
+    //             float dist = cv::norm(mCurrentFrame.mvKeys[i].pt - currPts[k]);
+
+    //             if(dist < bestDist)
+    //             {
+    //                 bestDist = dist;
+    //                 idx_curr = i;
+    //             }
+    //         }
+
+    //         if(idx_curr < 0) continue;
+
+            
+    //         cv::Point3f prev3D = mLastFrame.mvPoints3D[idx_prev];
+    //         cv::Point3f curr3D = mCurrentFrame.mvPoints3D[idx_curr];
+
+    //         if(std::isnan(prev3D.x) || std::isnan(curr3D.x))
+    //             continue;
+
+    //         dynamicPrev.push_back(prev3D);
+    //         dynamicCurr.push_back(curr3D);
+    //         dynamicMatchesIndex.emplace_back(idx_prev, idx_curr);
+    //     }
+
+    //     // Add Dynamic Tracker here 
+    //     if (!dynamicMatchesIndex.empty()) {
+    //         //mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, dynamicCurr, dynamicPrev, dynamicMatchesIndex);
+    //         mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, dynamicCurr, dynamicPrev);
+    //     } else{
+    //         std::cout << "NO MATCHES FOUND !" << std::endl;
+    //     }
+    // }
+    // ===================== V2  =======================
+
     std::vector<cv::Point2f> prevPts, currPts;
-    std::vector<int> prevIdx, currIdx;
+    std::vector<int> currIdx;
     bool empty_vect = false;
-    std::vector<pair<int,int>> dynamicMatchesIndex;
 
     if (mLastFrame.mImGrayLast.empty() || mLastFrame.mvDynamicKeys.empty() || mCurrentFrame.mvDynamicKeys.empty())
         empty_vect = true;
@@ -1966,43 +2045,39 @@ void Tracking::Track()
     // std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
     // std::cout << "LAST FRAME DYNAMIC KEYS: " << mLastFrame.mvDynamicKeys.size() << std::endl;
     if (!empty_vect) {
-        for(int i = 0; i < mLastFrame.N; i++)
-        {
-            if(mLastFrame.mvbDynamic[i])
-                prevPts.push_back(mLastFrame.mvKeys[i].pt);
-                prevIdx.push_back(i); 
-        }
-    
         std::vector<uchar> status;
         std::vector<float> err;
+        
+        for(int i = 0; i < mLastFrame.N_dynamic; i++)
+        {
+            prevPts.push_back(mLastFrame.mvDynamicKeys[i].pt);
+        }
+
+        std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
         
         cv::calcOpticalFlowPyrLK(
             mLastFrame.mImGrayLast, mCurrentFrame.mImGray,
             prevPts, currPts,
             status, err
         );
-
+        
         // 3D Correspondeces (Tracked Pairs)
-        vector<cv::Point3f> dynamicPrev;
-        vector<cv::Point3f> dynamicCurr;
-
-        for(int k = 0; k < prevPts.size(); k++)
+        std::vector<std::pair<cv::Point3f, cv::Point3f>> dyn_kp_matches;
+        std::vector<std::pair<int, int>> idx_matches;
+        
+        for(int k = 0; k < mLastFrame.N_dynamic; k++)
         {
             // Cant find this point in curr Frame from optical flow
             if(!status[k]) continue;
-            
-            // Found tracked point in current frame
-            int idx_prev = prevIdx[k];  // from your earlier mapping
 
             // find nearest keypoint in current frame
             int idx_curr = -1;
             float bestDist = 5.0f;
 
-            for(int i = 0; i < mCurrentFrame.N; i++)
+            for(int i = 0; i < mCurrentFrame.N_dynamic; i++)
             {
-                if(!mCurrentFrame.mvbDynamic[i]) continue;
-
-                float dist = cv::norm(mCurrentFrame.mvKeys[i].pt - currPts[k]);
+    
+                float dist = cv::norm(mCurrentFrame.mvDynamicKeys[i].pt - prevPts[k]);
 
                 if(dist < bestDist)
                 {
@@ -2013,28 +2088,25 @@ void Tracking::Track()
 
             if(idx_curr < 0) continue;
 
-            
-            cv::Point3f prev3D = mLastFrame.mvPoints3D[idx_prev];
-            cv::Point3f curr3D = mCurrentFrame.mvPoints3D[idx_curr];
-
-            if(std::isnan(prev3D.x) || std::isnan(curr3D.x))
-                continue;
-
-            dynamicPrev.push_back(prev3D);
-            dynamicCurr.push_back(curr3D);
-            dynamicMatchesIndex.emplace_back(idx_prev, idx_curr);
+            // already a pair with tracked correspondence (prev, curr)
+            dyn_kp_matches.emplace_back(mLastFrame.mvDynamicPoints3D[k], mCurrentFrame.mvDynamicPoints3D[idx_curr]);
+            idx_matches.emplace_back(k, idx_curr);
         }
 
-        // Add Dynamic Tracker here 
-        if (!dynamicMatchesIndex.empty()) {
-            mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, dynamicCurr, dynamicPrev, dynamicMatchesIndex);
-        } else{
-            std::cout << "NO MATCHES FOUND !" << std::endl;
+        std::cout << dyn_kp_matches.size() << idx_matches.size() << std::endl;
+        if (dyn_kp_matches.size() == idx_matches.size()) {
+            mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
         }
-        
 
+
+        // // Add Dynamic Tracker here 
+        // if (!dynamicMatchesIndex.empty()) {
+        //     //mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, dynamicCurr, dynamicPrev, dynamicMatchesIndex);
+        //     mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, matches);
+        // } else{
+        //     std::cout << "NO MATCHES FOUND !" << std::endl;
+        // }
     }
-    // =====================
 
     if (bStepByStep)
     {
@@ -3159,8 +3231,7 @@ bool Tracking::TrackWithMotionModel()
             return false;
     }
 
-    
-    
+
 
     // Optimize frame pose with all matches
     Optimizer::PoseOptimization(&mCurrentFrame);
@@ -3169,6 +3240,13 @@ bool Tracking::TrackWithMotionModel()
     int nmatchesMap = 0;
     for(int i =0; i<mCurrentFrame.N; i++)
     {
+        if(mCurrentFrame.mvbDynamic[i])
+        {
+            mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint*>(NULL);
+            mCurrentFrame.mvbOutlier[i] = false;
+            continue;
+        }
+
         if(mCurrentFrame.mvpMapPoints[i])
         {
             if(mCurrentFrame.mvbOutlier[i])
@@ -3534,7 +3612,7 @@ void Tracking::CreateNewKeyFrame()
                 int i = vDepthIdx[j].second;
 
                 bool bCreateNew = false;
-
+                if(mCurrentFrame.mvbDynamic[i]) continue;
                 MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
                 if(!pMP)
                     bCreateNew = true;
