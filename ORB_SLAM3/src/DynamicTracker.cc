@@ -114,13 +114,13 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     const std::vector<std::pair<int,int>>& _idx_matches,
     const std::vector<std::pair<cv::Point3f, cv::Point3f>>& _optical_flow_matches)
 {
-    std::cout << "Cluster V2" << std::endl;
+    //std::cout << "NEW FRAME" << std::endl;
     optical_flow_matches = _optical_flow_matches;
     idx_matches = _idx_matches;
     // Step 1: cluster indices
     std::vector<std::vector<int>> clusters;
-    ClusterPoints2(mCurrentFrame, mLastFrame, clusters);
-    std::cout << "Number of Current Objects created: " << clusters.size() << std::endl;
+    clusters = ClusterPoints2(mCurrentFrame, mLastFrame);
+    std::cout << "Number of Current Objects created after ret: " << clusters.size() << std::endl;
 }
 
 void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame, 
@@ -245,18 +245,16 @@ float DynamicTracker::Distance(const cv::Point3f& a, const cv::Point3f& b)
     return cv::norm(a - b);
 }
 
-void DynamicTracker::ClusterPoints2(
+std::vector<std::vector<int>> DynamicTracker::ClusterPoints2(
     Frame& mCurrentFrame,
-    Frame& mLastFrame,
-    std::vector<std::vector<int>>& clusters
+    Frame& mLastFrame
 )
 {
 
     int N = optical_flow_matches.size();
     int M = mCurrentFrame.N_dynamic;
-
+    std::vector<std::vector<int>> clusters;
     std::vector<bool> visited(M, false);
-    std::cout << "Cluster V2" << std::endl;
 
     for(int i = 0; i < N; i++)
     {
@@ -300,7 +298,7 @@ void DynamicTracker::ClusterPoints2(
             if(flow_mag > 2.0f)   // tune this
                 continue;
 
-            std::cout << "flow_i:\t" << flow_i << std::endl;
+            //std::cout << "flow_i:\t" << flow_i << std::endl;
 
             // Get correct grid cell of THIS point
             int gx = mCurrentFrame.mvDynamicGridPos[curr_idx].first;
@@ -346,8 +344,12 @@ void DynamicTracker::ClusterPoints2(
                         {
                             if(m.second == j_int)
                             {
-                                std::cout << "Curr Idx: \t" << m.second << "\tj_int: \t" << j_int << std::endl;
                                 prev_j = m.first;
+                                // std::cout 
+                                // << "Curr Idx: \t" << m.second 
+                                // << "\tj_int: \t" << j_int 
+                                // << "\t prev_j: \t" << prev_j 
+                                // << std::endl;
                                 found = true;
                                 break;
                             }
@@ -368,11 +370,11 @@ void DynamicTracker::ClusterPoints2(
                             mCurrentFrame.mvDynamicPoints3D[j_int] -
                             mLastFrame.mvDynamicPoints3D[prev_j];
                         
-                        std::cout << "flow_j:\t" << flow_j << std::endl;
+                        //std::cout << "flow_j:\t" << flow_j << std::endl;
                         
                         float motion_dist = cv::norm(flow_i - flow_j);
                         
-                        std::cout << "Motion:\t" << motion_dist << "\n" << std::endl;
+                        //std::cout << "Motion:\t" << motion_dist << "\n" << std::endl;
 
                         if(motion_dist < MOTION_THRESH)
                         {
@@ -386,8 +388,12 @@ void DynamicTracker::ClusterPoints2(
         
         // cluster consists of vector<int> of indices of keypoints detected in Current Frame
         if(cluster.size() >= 5)
-            clusters.push_back(cluster);
+            clusters.push_back(cluster); 
+            //std::cout << "New Objects Created !" << std::endl;
     }
+
+    std::cout << "Number of Objects Created : " << clusters.size() << std::endl;
+    return clusters;
 }
 
 void DynamicTracker::ClusterPoints(
@@ -401,7 +407,7 @@ void DynamicTracker::ClusterPoints(
 
         int N = GridPos.size();
         std::vector<bool> visited(N, false);
-        std::cout << "Hi" << std::endl;
+
         // Map to a pair of <kp_idx, filtered_idx>
         std::unordered_map<int,int> currToMatchIdx;
         //std::cout << "Matches" << dynamic_info.dynamicMatchesIndex.size() << std::endl;

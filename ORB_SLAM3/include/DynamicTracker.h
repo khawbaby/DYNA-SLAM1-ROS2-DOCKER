@@ -41,7 +41,7 @@ public:
     std::vector<std::pair<int,int>> idx_matches;
     int next_id;
     const float DIST_THRESH   = 0.5f;
-    const float MOTION_THRESH = 0.3f;
+    const float MOTION_THRESH = 0.1f;
 
     DynamicTracker();
 
@@ -70,10 +70,9 @@ private:
 
     void rstVars(); 
     
-    void ClusterPoints2(
+    std::vector<std::vector<int>> ClusterPoints2(
         Frame& mCurrentFrame,
-        Frame& mLastFrame,
-        std::vector<std::vector<int>>& clusters
+        Frame& mLastFrame
     );
 
     void ClusterPoints(

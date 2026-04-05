@@ -70,10 +70,10 @@ Frame::Frame(const Frame &frame)
      monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
      mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
-     mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false),mvbDynamic(frame.mvbDynamic), 
-     mvPoints3D(frame.mvPoints3D), mDynamicObjects(frame.mDynamicObjects),
-     mvDynamicKeys(frame.mvDynamicKeys), mvDynamicPoints3D(frame.mvDynamicPoints3D),
-     mvDynamicGridPos(frame.mvDynamicGridPos), N_dynamic(frame.N_dynamic)
+     mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false),mvbDynamic(frame.mvbDynamic),
+     mDynamicObjects(frame.mDynamicObjects), mvDynamicKeys(frame.mvDynamicKeys), 
+     mvDynamicPoints3D(frame.mvDynamicPoints3D), mvDynamicGridPos(frame.mvDynamicGridPos),
+     N_dynamic(frame.N_dynamic)
 {
     mImGrayLast = frame.mImGray.clone();
 
@@ -237,7 +237,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 #endif
     
     mvbDynamic = std::vector<bool>(mvKeys.size(), false);
-
+    //std::cout << "Before dynamic Filtering: " << mvKeys.size() << std::endl;
     // cout << "size of keyframe matrix: " << mvbDynamic.size() << endl;
     int dilation_size = 7;
 
@@ -257,23 +257,16 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     for (size_t i(0); i < mvKeys.size(); ++i)
     {
-        int x = round(mvKeys[i].pt.x);
-        int y = round(mvKeys[i].pt.y);
-
-        if(x < 0 || x >= mDynamicMask.cols || y < 0 || y >= mDynamicMask.rows)
-            continue;
-
-        int val = mDynamicMask.at<uchar>(y, x);
-
+        int val = (int)mDynamicMask.at<uchar>(mvKeys[i].pt.y,mvKeys[i].pt.x);
         if (val == 1)
         {
-            mvbDynamic[i] = false;
             _mvKeys.push_back(mvKeys[i]);
             _mDescriptors.push_back(mDescriptors.row(i));
+            mvbDynamic[i] = false;
         } else {
-            mvbDynamic[i] = true;
             _mvDynamicKeys.push_back(mvKeys[i]);
             _mDynamicDescriptors.push_back(mDescriptors.row(i));
+            mvbDynamic[i] = true;
         }
     }
 
@@ -284,38 +277,14 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     N = mvKeys.size();
     N_dynamic = mvDynamicKeys.size();
+    if (N_dynamic > 0)
+        //std::cout << "After dynamic Filtering: " << mvKeys.size() << std::endl;
     if(mvKeys.empty())
         return;
 
     UndistortKeyPoints();
     UndistortDynamicKeyPoints();
     ComputeStereoFromRGBD(imDepth);
-
-    mvPoints3D = std::vector<cv::Point3f>(
-        mvKeys.size(),
-        cv::Point3f(NAN, NAN, NAN)
-    );
-
-    for(size_t i = 0; i < mvKeys.size(); i++)
-    {
-        const cv::KeyPoint &kp = mvKeys[i];
-
-        int x = round(kp.pt.x);
-        int y = round(kp.pt.y);
-
-        if(x < 0 || x >= imDepth.cols || y < 0 || y >= imDepth.rows)
-            continue;
-
-        float d = imDepth.at<float>(y, x);
-        if(d <= 0)
-            continue;
-
-        float X = (kp.pt.x - cx) * d * invfx;
-        float Y = (kp.pt.y - cy) * d * invfy;
-        float Z = d;
-
-        mvPoints3D[i] = cv::Point3f(X, Y, Z);
-    }
 
     for(size_t i = 0; i < mvDynamicKeys.size(); i++)
     {
@@ -396,9 +365,6 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     AssignDynamicFeaturesToGrid();
 
     VisualizeGrid(imGray);
-
-    // mpPrevFrame->mvDynamicKeys
-    // mpPrevFrame->mvDynamicPoints3D
 }
 
 // Monocular IMU

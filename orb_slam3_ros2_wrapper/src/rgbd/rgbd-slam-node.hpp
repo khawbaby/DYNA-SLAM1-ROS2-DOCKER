@@ -33,6 +33,8 @@ namespace ORB_SLAM3_Wrapper
         ~RgbdSlamNode();
 
     private:
+        bool mask_received_ = false;
+        std::condition_variable mask_cv_;
         typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> approximate_sync_policy;
 
         // ROS 2 Callbacks.

@@ -51,6 +51,16 @@ namespace ORB_SLAM3_Wrapper
         cv_bridge::CvImageConstPtr cvRGB;
         cv_bridge::CvImageConstPtr cvD;
         // Copy the ros rgb image message to cv::Mat.
+
+        if (!mask_received_) {
+            RCLCPP_WARN_THROTTLE(
+                this->get_logger(),
+                *this->get_clock(),
+                2000,
+                "Waiting for first mask..."
+            );
+            return;
+        }
         try
         {
             cvRGB = cv_bridge::toCvShare(msgRGB);
@@ -104,6 +114,7 @@ namespace ORB_SLAM3_Wrapper
 
             std::lock_guard<std::mutex> lock(mask_mutex_);
             latest_mask_ = cvMask->image.clone();
+            mask_received_ = true;  
         }
         catch (cv_bridge::Exception &e)
         {

@@ -2053,7 +2053,7 @@ void Tracking::Track()
             prevPts.push_back(mLastFrame.mvDynamicKeys[i].pt);
         }
 
-        std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
+        //std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
         
         cv::calcOpticalFlowPyrLK(
             mLastFrame.mImGrayLast, mCurrentFrame.mImGray,
@@ -2093,7 +2093,6 @@ void Tracking::Track()
             idx_matches.emplace_back(k, idx_curr);
         }
 
-        std::cout << dyn_kp_matches.size() << idx_matches.size() << std::endl;
         if (dyn_kp_matches.size() == idx_matches.size()) {
             mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
         }
