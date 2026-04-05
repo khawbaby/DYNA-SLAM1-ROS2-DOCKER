@@ -270,10 +270,24 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
         }
     }
 
+
     mvKeys = _mvKeys;
     mDescriptors = _mDescriptors;
     mvDynamicKeys = _mvDynamicKeys; 
     mDynamicDescriptors = _mDynamicDescriptors;
+    // cv::KeyPoint kp;
+    // int idx = 0;
+    // for(int y = 0; y < mDynamicMask.rows; y++)
+    // {
+    //     for(int x = 0; x < mDynamicMask.cols; x++)
+    //     {
+    //         if((int)mDynamicMask.at<uchar>(y, x) == 0)
+    //         {   
+    //             kp = cv::KeyPoint(x,y,1.0f);
+    //             mvDynamicKeys.push_back(kp);
+    //         }
+    //     }
+    // }
 
     N = mvKeys.size();
     N_dynamic = mvDynamicKeys.size();

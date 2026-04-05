@@ -40,8 +40,8 @@ public:
     std::vector<std::pair<cv::Point3f, cv::Point3f>> optical_flow_matches;
     std::vector<std::pair<int,int>> idx_matches;
     int next_id;
-    const float DIST_THRESH   = 0.5f;
-    const float MOTION_THRESH = 0.1f;
+    const float DIST_THRESH   = 1.0f;
+    const float MOTION_THRESH = 0.8f;
 
     DynamicTracker();
 
@@ -72,7 +72,7 @@ private:
     
     std::vector<std::vector<int>> ClusterPoints2(
         Frame& mCurrentFrame,
-        Frame& mLastFrame
+        Frame& mLastFrame   
     );
 
     void ClusterPoints(

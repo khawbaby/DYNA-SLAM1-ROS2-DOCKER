@@ -14,7 +14,7 @@ class YoloNode(Node):
     def __init__(self):
         super().__init__('yolo_node')
         self.dynamic_classes = [
-            0, 1, 2, 3, 5, 7  # person, bicycle, car, motorcycle, bus, truck
+            0, 1, 2, 3, 5, 7, 56 # person, bicycle, car, motorcycle, bus, truck
         ]
         self.bridge = CvBridge()
 

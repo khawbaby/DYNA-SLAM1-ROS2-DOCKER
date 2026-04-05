@@ -28,6 +28,7 @@ public:
     void Update(const std::vector<cv::Point3f>& newPoints,
                 const std::vector<cv::Point3f>& prevPoints);
 
+    void Update(const std::vector<cv::Point3f>& newPoints);
     void ComputeCentroid();
 
     void FitEllipsoid();

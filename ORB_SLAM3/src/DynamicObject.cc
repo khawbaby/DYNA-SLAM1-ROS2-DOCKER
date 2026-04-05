@@ -23,6 +23,10 @@ void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints,
     }
 }
 
+void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints)
+{
+    points3D = newPoints;
+}
 // void DynamicObject::ComputeCentroid()
 // {
 //     prevCentroid3D = centroid3D;
@@ -41,14 +45,6 @@ void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints,
 
 void DynamicObject::ComputeCentroid()
 {
-    cv::Point3f c_prev(0,0,0);
-    for(auto &p : prevPoints3D)
-        c_prev += p;
-
-    if(!prevPoints3D.empty())
-        c_prev *= (1.0f / prevPoints3D.size());
-
-    prevCentroid3D = c_prev;
 
     cv::Point3f c(0,0,0);
     for(auto &p : points3D)
@@ -58,10 +54,6 @@ void DynamicObject::ComputeCentroid()
         c *= (1.0f / points3D.size());
 
     centroid3D = c;
-    
-    if (prevCentroid3D.x == 0 && prevCentroid3D.y == 0 && prevCentroid3D.z == 0) {
-        prevCentroid3D = centroid3D;
-    }
 }
 
 void DynamicObject::FitEllipsoid()

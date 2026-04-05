@@ -263,7 +263,7 @@ public:
     static float mfGridElementHeightInv;
     std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
     std::vector<std::pair<int,int>> mvGridPos;
-    std::vector<std::size_t> mDynamicGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+    std::vector<int> mDynamicGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
     std::vector<std::pair<int,int>> mvDynamicGridPos;
     
     IMU::Bias mPredBias;
