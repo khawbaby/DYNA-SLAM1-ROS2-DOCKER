@@ -1,6 +1,7 @@
 #include "DynamicObject.h"
 #include <opencv2/core.hpp>
 #include <iostream>
+#include <opencv2/opencv.hpp>
 
 namespace ORB_SLAM3
 {
@@ -115,8 +116,65 @@ void DynamicObject::FitEllipsoid()
     // Convert variance → actual size
     cv::sqrt(axes, axes);
     
-    // cv::Mat test = (cv::Mat_<float>(3,1) << 0.5, 0.2, 0.5);
-    // test = cv::norm (axes - test);
-    // std::cout << "Euclidean Distance : " << test << std::endl;
+    const int steps = 20;
+
+    float a = axes.at<float>(0,0);
+    float b = axes.at<float>(1,0);
+    float c = axes.at<float>(2,0);
+
+    for(int i = 0; i < steps; i++)
+    {
+        float theta = CV_PI * i / steps; // 0 → π
+
+        for(int j = 0; j < steps; j++)
+        {
+            float phi = 2 * CV_PI * j / steps; // 0 → 2π
+
+            // Unit sphere
+            float x = sin(theta) * cos(phi);
+            float y = sin(theta) * sin(phi);
+            float z = cos(theta);
+
+            // Scale → ellipsoid
+            cv::Mat pt = (cv::Mat_<float>(3,1) << a*x, b*y, c*z);
+
+            // Rotate
+            pt = orientation * pt;
+
+            // Translate
+            pt += center;
+
+            ellipsoidPoints.emplace_back(
+                pt.at<float>(0),
+                pt.at<float>(1),
+                pt.at<float>(2)
+            );
+        }
+    }
+    
 }
+
+void DynamicObject::DrawEllipsoid2D(
+    cv::Mat &image,
+    const cv::Mat &K // camera intrinsic matrix
+)
+{
+    for(const auto &p : ellipsoidPoints)
+    {
+        cv::Mat pt3D = (cv::Mat_<float>(3,1) << p.x, p.y, p.z);
+
+        // Project to 2D: x' = K * X
+        cv::Mat proj = K * pt3D;
+
+        float u = proj.at<float>(0) / proj.at<float>(2);
+        float v = proj.at<float>(1) / proj.at<float>(2);
+
+        if(u >= 0 && u < image.cols &&
+           v >= 0 && v < image.rows)
+        {
+            cv::circle(image, cv::Point(u,v), 1, cv::Scalar(0,255,0), -1);
+        }
+    }
+}
+
 }

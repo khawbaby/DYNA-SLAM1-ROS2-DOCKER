@@ -34,13 +34,12 @@ struct DynamicPtsInfo {
 
 class DynamicTracker {
 public:
-    std::vector<DynamicObject> CurrentObjects;
-    std::vector<DynamicObject> PrevObjects;
+    
     DynamicPtsInfo dynamic_info;
     std::vector<std::pair<cv::Point3f, cv::Point3f>> optical_flow_matches;
     std::vector<std::pair<int,int>> idx_matches;
     int next_id;
-    const float DIST_THRESH   = 1.0f;
+    const float DIST_THRESH   = 0.5f;
     const float MOTION_THRESH = 0.8f;
 
     DynamicTracker();
@@ -75,19 +74,11 @@ private:
         Frame& mLastFrame   
     );
 
-    void ClusterPoints(
-        Frame& mCurrentFrame,
-        const GridType& Grid,
-        const std::vector<std::pair<int,int>>& GridPos,
-        std::vector<std::vector<int>>& clusters
-    );
-
     float computeSigma(const std::vector<float>& data);
     //float computeCost(const Object& track, const Object& det,
                   //float sigma_d, float sigma_m, float sigma_s); 
 
-    int greedyMatching(DynamicObject& newObj);
-    //int HungarianMatching(DynamicObject& newObj);
+
     float Distance(const cv::Point3f& a, const cv::Point3f& b);
 };
 
