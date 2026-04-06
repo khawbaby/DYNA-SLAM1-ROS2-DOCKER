@@ -450,5 +450,4 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints2(
     return clusters;
 }
 
-
 }

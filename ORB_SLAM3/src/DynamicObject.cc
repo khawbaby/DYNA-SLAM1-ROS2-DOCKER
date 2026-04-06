@@ -2,7 +2,6 @@
 #include <opencv2/core.hpp>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-
 namespace ORB_SLAM3
 {
 
@@ -176,5 +175,7 @@ void DynamicObject::DrawEllipsoid2D(
         }
     }
 }
+
+
 
 }
