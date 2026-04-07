@@ -77,6 +77,10 @@ Frame::Frame(const Frame &frame)
 {
     mImGrayLast = frame.mImGray.clone();
 
+    // for(int i=0; i<frame.mDynamicObjects.size()) {
+    //     mDynamicOb
+    // }
+
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++){
             mGrid[i][j]=frame.mGrid[i][j];

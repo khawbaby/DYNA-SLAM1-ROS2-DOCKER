@@ -80,6 +80,8 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     mCurrentFrame.mDynamicObjects = CurrentObjects;
     PrevObjects = mLastFrame.mDynamicObjects;
 
+    std::cout << "Prev Objects: " << PrevObjects.size() << std::endl;
+    std::cout << "Current Objects: " << CurrentObjects.size() << std::endl;
     // std::cout << "Ret Objects Created : " << clusters.size() << std::endl;
     // std::cout << "Curr Objects Created : " << CurrentObjects.size() << std::endl;
     // std::cout << "Prev Objects Created : " << mLastFrame.mDynamicObjects.size() << "\n" << std::endl;
@@ -89,6 +91,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     std::vector<float> dist_vect, motion_vect, size_vect;
     for(int i = 0; i < PrevObjects.size(); i++)
     {
+        std::cout << "Velocity: " << PrevObjects[i].velocity << std::endl;
         for(int j = 0; j < CurrentObjects.size(); j++)
         {
             float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
@@ -98,9 +101,8 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
             size_vect.push_back(sizeDiff);
             
             float motion = -1;
-            if (PrevObjects[i].prevCentroid3D.x != -1) {
-                cv::Point3f vel_old = PrevObjects[i].centroid3D - PrevObjects[i].prevCentroid3D;
-                cv::Point3f predicted = PrevObjects[i].centroid3D + vel_old;
+            if (PrevObjects[i].velocity.x != -1000) {
+                cv::Point3f predicted = PrevObjects[i].centroid3D + PrevObjects[i].velocity;
                 motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
                 motion_vect.push_back(motion);
             } 
@@ -126,7 +128,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
         std::cout
             << " sigma_d: " << sigma_d << std::setw(25)
             << " sigma_m: " << sigma_m << std::setw(25)
-            << " sigma_m: " << sigma_m << std::endl;
+            << " sigma_s: " << sigma_s << std::endl;
 
         int N = PrevObjects.size();
         int M = CurrentObjects.size();
@@ -143,9 +145,8 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
                 float m_score = -1; 
                 float motion = 0;
 
-                if (PrevObjects[i].prevCentroid3D.x != -1) {
-                    cv::Point3f vel_old = PrevObjects[i].centroid3D - PrevObjects[i].prevCentroid3D;
-                    cv::Point3f predicted = PrevObjects[i].centroid3D + vel_old;
+                if (PrevObjects[i].velocity.x != -1000) {
+                    cv::Point3f predicted = PrevObjects[i].centroid3D + PrevObjects[i].velocity;
                     motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
                 } 
 
@@ -155,10 +156,9 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
 
                 float totalScore = d_score + m_score + s_score;
                 std::cout
-                    << " dist: " << d_score << std::setw(25)
-                    << " motion: " << m_score << std::setw(25)
-                    << " sizeDiff: " << s_score << std::endl;
-                std::cout << std::endl;
+                    << " d_score: " << d_score << std::setw(25)
+                    << " m_score: " << m_score << std::setw(25)
+                    << " s_score: " << s_score << std::endl;
 
                 // Gating
                 if(totalScore < 50.0f)
@@ -166,9 +166,36 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
             }
         }
 
+        // [A1, A2, A3] -> Prev Obj
+        // [B1, B2, B3] -> Curr Obj
+        // [1,  0,  2] -> [A1->B2,  A2->B1,  A3->B3]
         std::vector<int> assignment = hungarian_solver.solve(costMatrix);
-        std::cout << "Assignments: " << assignment.size() << "\n" << std::endl;
+        std::cout << "Assignments: " << assignment.size() << std::endl;
+        std::vector<bool> used(CurrentObjects.size(), false);
+
+        for(int i = 0; i < assignment.size(); i++)
+        {
+            std::cout << assignment[i] << "\t";
+        }
+        std::cout << std::endl;
+
+        for(int i = 0; i < assignment.size(); i++)
+        {
+            int j = assignment[i];
+            if(j == -1) {
+                std::cout << "Tracking lost" << std::endl;
+                continue;
+            }
+            else { 
+                used[assignment[i]] = true;
+            }
+            // Transfer info from previous to current
+            mCurrentFrame.mDynamicObjects[j].velocity =
+                CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D;
+        }
     }
+
+    std::cout << std::endl;
 }
 
 void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame, 

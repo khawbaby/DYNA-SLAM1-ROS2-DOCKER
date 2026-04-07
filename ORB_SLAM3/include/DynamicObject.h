@@ -23,7 +23,7 @@ public:
 
     cv::Point3f centroid3D;
     cv::Point3f prevCentroid3D = cv::Point3f(-1.0f, -1.0f, -1.0f); 
-
+    cv::Point3f velocity = cv::Point3f(-1000.0f, -1.0f, -1.0f);
     cv::Point3d axes3D;
 
     int age;    
