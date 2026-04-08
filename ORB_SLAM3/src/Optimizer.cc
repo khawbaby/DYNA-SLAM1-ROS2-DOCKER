@@ -1009,27 +1009,30 @@ int Optimizer::PoseOptimization(Frame *pFrame)
         VertexObject* vObj = new VertexObject();
         vObj->setId(objIdStart+i);
         vObj->setEstimate(t_obj);
-        // optimizer.addVertex(vObj);
+        optimizer.addVertex(vObj);
 
         // --- Measurement ---
         Sophus::SE3<double> Tcw_d = Tcw.cast<double>();
+        // Object in world frame -> camera frame
         Eigen::Vector3d obj_cam = Tcw_d * t_obj;
 
-        // // --- Edge ---
-        // EdgeCameraObject* e = new EdgeCameraObject();
+        // --- Edge ---
+        EdgeCameraObject* e = new EdgeCameraObject();
 
-        // e->setVertex(0, vSE3);  // camera
-        // e->setVertex(1, vObj);  // object
+        e->setVertex(0, vSE3);  // camera
+        e->setVertex(1, vObj);  // object
 
-        // e->setMeasurement(obj_cam);
+        e->setMeasurement(obj_cam);
 
-        // e->setInformation(0.1f * Eigen::Matrix3f::Identity());
+        e->setInformation(0.1 * Eigen::Matrix3d::Identity());
 
         // auto* rk = new g2o::RobustKernelHuber();
         // rk->setDelta(1.0);
         // e->setRobustKernel(rk);
-
-        // optimizer.addEdge(e);
+        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
+        e->setRobustKernel(rk);
+        rk->setDelta(deltaMono);
+        optimizer.addEdge(e);
     }
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier

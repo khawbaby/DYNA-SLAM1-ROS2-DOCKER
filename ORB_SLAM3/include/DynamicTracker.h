@@ -34,7 +34,7 @@ struct DynamicPtsInfo {
 
 class DynamicTracker {
 public:
-    
+    bool onInitialization;
     DynamicPtsInfo dynamic_info;
     std::vector<std::pair<cv::Point3f, cv::Point3f>> optical_flow_matches;
     std::vector<std::pair<int,int>> idx_matches;

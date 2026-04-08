@@ -95,6 +95,7 @@ src/DynamicObject.cc
 src/DynamicTracker.cc
 src/Hungarian.cc
 src/VertexObject.cc
+src/EdgeCameraObject.cc
 include/System.h
 include/Tracking.h
 include/LocalMapping.h
@@ -129,6 +130,7 @@ include/DynamicObject.h
 include/DynamicTracker.h
 include/Hungarian.h
 include/VertexObject.h
+include/EdgeCameraObject.h
 )
 
 add_subdirectory(Thirdparty/g2o)

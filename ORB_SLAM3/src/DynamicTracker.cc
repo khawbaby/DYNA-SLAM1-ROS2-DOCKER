@@ -66,7 +66,8 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
         {
             objCurr.push_back(mCurrentFrame.mvDynamicPoints3D[idx]);
         }
-        DynamicObject obj(next_id++);
+        
+        DynamicObject obj(0);
         obj.Update(objCurr);
         obj.ComputeCentroid();
         obj.FitEllipsoid();
@@ -116,6 +117,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     }
     
     if (PrevObjects.size()!=0 && CurrentObjects.size()!=0) {
+        onInitialization = false;
         // Compute sigma
         float sigma_d = computeSigma(dist_vect);
         float sigma_m = computeSigma(motion_vect);
@@ -164,11 +166,12 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
                 if(totalScore < 50.0f)
                     costMatrix[i][j] = totalScore;
             }
-        }
+        } 
 
         // [A1, A2, A3] -> Prev Obj
-        // [B1, B2, B3] -> Curr Obj
         // [1,  0,  2] -> [A1->B2,  A2->B1,  A3->B3]
+        // [B1, B2, B3] -> Curr Obj
+        
         std::vector<int> assignment = hungarian_solver.solve(costMatrix);
         std::cout << "Assignments: " << assignment.size() << std::endl;
         std::vector<bool> used(CurrentObjects.size(), false);
@@ -184,15 +187,26 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
             int j = assignment[i];
             if(j == -1) {
                 std::cout << "Tracking lost" << std::endl;
+                // New object id
+                next_id++;
                 continue;
             }
             else { 
+                if (onInitialization) {
+                    next_id++;
+                } else {
+                    mCurrentFrame.mDynamicObjects[j].id = next_id;
+                }
                 used[assignment[i]] = true;
             }
+            std::vector<DynamicObject> alignedObjects; 
+            
             // Transfer info from previous to current
             mCurrentFrame.mDynamicObjects[j].velocity =
                 CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D;
         }
+    }   else {
+        onInitialization = true;
     }
 
     std::cout << std::endl;
