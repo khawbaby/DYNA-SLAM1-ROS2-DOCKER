@@ -1,14 +1,24 @@
 #include "DynamicObject.h"
+#include <vector>
+#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <Eigen/StdVector>
+#include <unsupported/Eigen/MatrixFunctions>
+#include <opencv2/core/eigen.hpp>
 #include <opencv2/core.hpp>
+#include <opencv2/core/eigen.hpp>
 #include <iostream>
+#include <opencv2/calib3d.hpp>
 #include <opencv2/opencv.hpp>
+#include "sophus/se3.hpp"
+
 namespace ORB_SLAM3
 {
 
 DynamicObject::DynamicObject(int _id): id(_id), age(1), isActive(true)
 {
     R = cv::Mat::eye(3,3,CV_32F);
-    t = cv::Mat::zeros(3,1,CV_32F);
+    //t = cv::Mat::zeros(3,1,CV_32F);
 }
 
 void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints,
@@ -108,13 +118,37 @@ void DynamicObject::FitEllipsoid()
     // axes is (3x1) How stretched it is along each axis
     axes = eigenvalues.clone();        // size
     
-    // eigenvectors (3x3) How much it is pointing towards each axis
+    // cov (3x3) , How much it is pointing towards each axis
     orientation = eigenvectors.clone(); // rotation
     center = mean.clone();
 
+    // can try optimize this later
+    t = cv::Vec3f(
+        center.at<float>(0,0),
+        center.at<float>(1,0),
+        center.at<float>(2,0)
+    );
+    
     // Convert variance → actual size
     cv::sqrt(axes, axes);
     
+    R = orientation.t();  
+    Eigen::Matrix3f R_eigen;
+    cv::cv2eigen(R, R_eigen);
+    if(R_eigen.determinant() < 0)
+    {
+        // Flip one axis (usually the smallest eigenvalue axis)
+        R.row(2) *= -1;
+
+        // Recompute Eigen version
+        cv::cv2eigen(R, R_eigen);
+    }
+    Eigen::Vector3f t_eigen(t[0], t[1], t[2]);
+
+    // Pose(R | T)
+    T_obj = Sophus::SE3<float>(R_eigen, t_eigen);
+
+    // FIll in ellipsoidal points
     const int steps = 20;
 
     float a = axes.at<float>(0,0);

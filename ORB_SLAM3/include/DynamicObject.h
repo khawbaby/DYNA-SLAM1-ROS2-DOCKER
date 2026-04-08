@@ -1,25 +1,35 @@
 #pragma once
 #include <vector>
+#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <Eigen/StdVector>
+#include <unsupported/Eigen/MatrixFunctions>
+#include <opencv2/core/eigen.hpp>
 #include <opencv2/core.hpp>
+#include <opencv2/core/eigen.hpp>
 #include <iostream>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/opencv.hpp>
+#include "sophus/se3.hpp"
 
 namespace ORB_SLAM3
 {
 class DynamicObject {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     int id;
 
+    Eigen::Matrix3f R_eigen;
+    Sophus::SE3<float> T_obj;
     std::vector<cv::Point3f> points3D;
     std::vector<cv::Point3f> prevPoints3D;
     std::vector<cv::Point3f> ellipsoidPoints;
 
     cv::Mat R;  // rotation
-    cv::Mat t;  // translation
     cv::Mat axes;        // 3x1
     cv::Mat orientation; // 3x3
     cv::Mat center;      // 3x1 (optional, same as centroid)
+    cv::Vec3f t; // translation
 
     cv::Point3f centroid3D;
     cv::Point3f prevCentroid3D = cv::Point3f(-1.0f, -1.0f, -1.0f); 
