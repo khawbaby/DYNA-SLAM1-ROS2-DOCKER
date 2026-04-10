@@ -1001,39 +1001,39 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
     int objIdStart = 10000;
     // Add Dynamic Edge Here 
-    for (int i=0; i<pFrame->mDynamicObjects.size(); i++) {
-        auto& obj = pFrame->mDynamicObjects[i];
-        Eigen::Vector3d t_obj = obj.T_obj.translation().cast<double>();
+    // for (int i=0; i<pFrame->mDynamicObjects.size(); i++) {
+    //     auto& obj = pFrame->mDynamicObjects[i];
+    //     Eigen::Vector3d t_obj = obj.T_obj.translation().cast<double>();
 
-        // --- Vertex ---
-        VertexObject* vObj = new VertexObject();
-        vObj->setId(objIdStart+i);
-        vObj->setEstimate(t_obj);
-        optimizer.addVertex(vObj);
+    //     // --- Vertex ---
+    //     VertexObject* vObj = new VertexObject();
+    //     vObj->setId(objIdStart+i);
+    //     vObj->setEstimate(t_obj); // measured 
+    //     optimizer.addVertex(vObj);
 
-        // --- Measurement ---
-        Sophus::SE3<double> Tcw_d = Tcw.cast<double>();
-        // Object in world frame -> camera frame
-        Eigen::Vector3d obj_cam = Tcw_d * t_obj;
+    //     // --- Measurement ---
+    //     Sophus::SE3<double> Tcw_d = Tcw.cast<double>();
+    //     // Object in world frame -> camera frame
+    //     Eigen::Vector3d obj_cam = Tcw_d * t_obj; // predicted
 
-        // --- Edge ---
-        EdgeCameraObject* e = new EdgeCameraObject();
+    //     // --- Edge ---
+    //     EdgeCameraObject* e = new EdgeCameraObject();
 
-        e->setVertex(0, vSE3);  // camera
-        e->setVertex(1, vObj);  // object
+    //     e->setVertex(0, vSE3);  // camera
+    //     e->setVertex(1, vObj);  // object
 
-        e->setMeasurement(obj_cam);
+    //     e->setMeasurement(obj_cam);
 
-        e->setInformation(0.1 * Eigen::Matrix3d::Identity());
+    //     e->setInformation(0.1 * Eigen::Matrix3d::Identity());
 
-        // auto* rk = new g2o::RobustKernelHuber();
-        // rk->setDelta(1.0);
-        // e->setRobustKernel(rk);
-        g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-        e->setRobustKernel(rk);
-        rk->setDelta(deltaMono);
-        optimizer.addEdge(e);
-    }
+    //     // auto* rk = new g2o::RobustKernelHuber();
+    //     // rk->setDelta(1.0);
+    //     // e->setRobustKernel(rk);
+    //     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
+    //     e->setRobustKernel(rk);
+    //     rk->setDelta(deltaMono);
+    //     optimizer.addEdge(e);
+    // }
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.

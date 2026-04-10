@@ -117,7 +117,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     }
     
     if (PrevObjects.size()!=0 && CurrentObjects.size()!=0) {
-        onInitialization = false;
+        
         // Compute sigma
         float sigma_d = computeSigma(dist_vect);
         float sigma_m = computeSigma(motion_vect);
@@ -175,40 +175,59 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
         std::vector<int> assignment = hungarian_solver.solve(costMatrix);
         std::cout << "Assignments: " << assignment.size() << std::endl;
         std::vector<bool> used(CurrentObjects.size(), false);
-
-        for(int i = 0; i < assignment.size(); i++)
-        {
-            std::cout << assignment[i] << "\t";
-        }
         std::cout << std::endl;
 
-        for(int i = 0; i < assignment.size(); i++)
+        std::vector<DynamicObject> alignedObjects; 
+        int it=0;
+        int idx =0;
+
+        for(int it = 0; it < assignment.size(); it++)
         {
-            int j = assignment[i];
-            if(j == -1) {
-                std::cout << "Tracking lost" << std::endl;
-                // New object id
-                next_id++;
+            int j = assignment[it];
+            std::cout << j << "\t";
+            if(j == -1) 
+            {
+                std::cout << "Tracking lost\n";
                 continue;
             }
-            else { 
-                if (onInitialization) {
-                    next_id++;
-                } else {
-                    mCurrentFrame.mDynamicObjects[j].id = next_id;
-                }
-                used[assignment[i]] = true;
-            }
-            std::vector<DynamicObject> alignedObjects; 
-            
-            // Transfer info from previous to current
-            mCurrentFrame.mDynamicObjects[j].velocity =
-                CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D;
-        }
-    }   else {
-        onInitialization = true;
-    }
 
+            DynamicObject obj = CurrentObjects[j];
+
+            if(onInitialization)
+            {
+                obj.id = next_id++;
+            }
+            else
+            {
+                obj.id = PrevObjects[it].id;
+                obj.velocity = obj.centroid3D - PrevObjects[it].centroid3D;
+            }
+
+            alignedObjects.push_back(obj);
+            used[j] = true;
+        }
+
+        // Handle NEW objects
+        for(int j = 0; j < CurrentObjects.size(); j++)
+        {
+            if(!used[j])
+            {
+                DynamicObject obj = CurrentObjects[j];
+                obj.id = next_id++;
+                alignedObjects.push_back(obj);
+            }
+        }
+
+        mCurrentFrame.mDynamicObjects = alignedObjects;
+
+        onInitialization = false;
+        } else {
+            onInitialization = true;
+            next_id = 0;
+        }
+    
+    
+    //mCurrentFrame.mDynamicObjects = alignedObjects;
     std::cout << std::endl;
 }
 
