@@ -1955,84 +1955,7 @@ void Tracking::Track()
     // =====================
     // DYNAMIC TRACKING HERE
     // =====================
-    // std::vector<cv::Point2f> prevPts, currPts;
-    // std::vector<int> prevIdx, currIdx;
-    // bool empty_vect = false;
-    // std::vector<pair<int,int>> dynamicMatchesIndex;
-
-    // if (mLastFrame.mImGrayLast.empty() || mLastFrame.mvDynamicKeys.empty() || mCurrentFrame.mvDynamicKeys.empty())
-    //     empty_vect = true;
-    
-    // // std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
-    // // std::cout << "LAST FRAME DYNAMIC KEYS: " << mLastFrame.mvDynamicKeys.size() << std::endl;
-    // if (!empty_vect) {
-    //     for(int i = 0; i < mLastFrame.N; i++)
-    //     {
-    //         if(mLastFrame.mvbDynamic[i])
-    //             prevPts.push_back(mLastFrame.mvKeys[i].pt);
-    //             prevIdx.push_back(i); 
-    //     }
-    
-    //     std::vector<uchar> status;
-    //     std::vector<float> err;
-        
-    //     cv::calcOpticalFlowPyrLK(
-    //         mLastFrame.mImGrayLast, mCurrentFrame.mImGray,
-    //         prevPts, currPts,
-    //         status, err
-    //     );
-
-    //     // 3D Correspondeces (Tracked Pairs)
-    //     vector<cv::Point3f> dynamicPrev;
-    //     vector<cv::Point3f> dynamicCurr;
-
-    //     for(int k = 0; k < prevPts.size(); k++)
-    //     {
-    //         // Cant find this point in curr Frame from optical flow
-    //         if(!status[k]) continue;
-            
-    //         // Found tracked point in current frame
-    //         int idx_prev = prevIdx[k];  // from your earlier mapping
-
-    //         // find nearest keypoint in current frame
-    //         int idx_curr = -1;
-    //         float bestDist = 5.0f;
-
-    //         for(int i = 0; i < mCurrentFrame.N; i++)
-    //         {
-    //             if(!mCurrentFrame.mvbDynamic[i]) continue;
-
-    //             float dist = cv::norm(mCurrentFrame.mvKeys[i].pt - currPts[k]);
-
-    //             if(dist < bestDist)
-    //             {
-    //                 bestDist = dist;
-    //                 idx_curr = i;
-    //             }
-    //         }
-
-    //         if(idx_curr < 0) continue;
-
-            
-    //         cv::Point3f prev3D = mLastFrame.mvPoints3D[idx_prev];
-    //         cv::Point3f curr3D = mCurrentFrame.mvPoints3D[idx_curr];
-
-    //         if(std::isnan(prev3D.x) || std::isnan(curr3D.x))
-    //             continue;
-
-    //         dynamicPrev.push_back(prev3D);
-    //         dynamicCurr.push_back(curr3D);
-    //         dynamicMatchesIndex.emplace_back(idx_prev, idx_curr);
-    //     }
-
-    //     // Add Dynamic Tracker here 
-    //     if (!dynamicMatchesIndex.empty()) {
-    //         //mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, dynamicCurr, dynamicPrev, dynamicMatchesIndex);
-    //         mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, dynamicCurr, dynamicPrev);
-    //     } else{
-    //         std::cout << "NO MATCHES FOUND !" << std::endl;
-    //     }
-    // }
+   
     // ===================== V2  =======================
 
     std::vector<cv::Point2f> prevPts, currPts;
@@ -2097,14 +2020,6 @@ void Tracking::Track()
             mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
         }
 
-
-        // // Add Dynamic Tracker here 
-        // if (!dynamicMatchesIndex.empty()) {
-        //     //mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, dynamicCurr, dynamicPrev, dynamicMatchesIndex);
-        //     mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, matches);
-        // } else{
-        //     std::cout << "NO MATCHES FOUND !" << std::endl;
-        // }
     }
 
     if (bStepByStep)
@@ -3067,8 +2982,8 @@ bool Tracking::TrackReferenceKeyFrame()
 
 
     // cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw << endl;
-    Optimizer::PoseOptimization(&mCurrentFrame);
-
+    //Optimizer::PoseOptimization(&mCurrentFrame);
+    Optimizer::PoseOptimization(&mCurrentFrame, &mLastFrame);
     // Discard outliers
     int nmatchesMap = 0;
     for(int i =0; i<mCurrentFrame.N; i++)

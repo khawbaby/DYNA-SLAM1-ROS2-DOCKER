@@ -33,9 +33,15 @@ void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints,
     }
 }
 
-void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints)
+void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints, const std::vector<cv::KeyPoint>& newPoints2D)
 {
     points3D = newPoints;
+    points2D = newPoints2D;
+    if(points2D.empty()) {
+        has2DObservation = false; 
+    } else {
+        has2DObservation = true;
+    }
 }
 // void DynamicObject::ComputeCentroid()
 // {
@@ -64,92 +70,92 @@ void DynamicObject::ComputeCentroid()
         c *= (1.0f / points3D.size());
 
     centroid3D = c;
+
+    cv::Point2f c2(0,0);
+
+    for(const auto& kp : points2D)
+        c2 += kp.pt;
+
+    if(!points2D.empty())
+        c2 *= (1.0f / points2D.size());
+
+    centroid2D = c2;
 }
 
 void DynamicObject::FitEllipsoid()
 {
     if(points3D.size() < 5) return;
 
+    // --- Mean ---
     cv::Mat mean = cv::Mat::zeros(3,1,CV_32F);
-
     for(auto &p : points3D)
     {
         mean.at<float>(0) += p.x;
         mean.at<float>(1) += p.y;
         mean.at<float>(2) += p.z;
     }
-
     mean /= (float)points3D.size();
 
+    // --- Covariance ---
     cv::Mat cov = cv::Mat::zeros(3,3,CV_32F);
-
     for(auto &p : points3D)
     {
         cv::Mat pt = (cv::Mat_<float>(3,1) << p.x, p.y, p.z);
-        // diff = (3 x 1)
         cv::Mat diff = pt - mean;
-
-        // cov = (3x1) * (1x3)
         cov += diff * diff.t();
     }
-
-    // point3D is (3x1)
     cov /= (float)points3D.size();
-    //std::cout << "cov: " << cov << std::endl;
-    // Eigen decomposition
+
+    // --- Eigen decomposition ---
     cv::Mat eigenvalues, eigenvectors;
     cv::eigen(cov, eigenvalues, eigenvectors);
-    bool ok = cv::eigen(cov, eigenvalues, eigenvectors);
 
-    if(!ok)
-    {
-        std::cout << "Eigen decomposition FAILED" << std::endl;
-    }
-
-    if(eigenvalues.empty())
-    {
-        std::cout << "Eigenvalues is EMPTY" << std::endl;
-    }
-
-    
-
-    //std::cout << "eigenvalues: " << eigenvalues << std::endl;
-    
-    // axes is (3x1) How stretched it is along each axis
-    axes = eigenvalues.clone();        // size
-    
-    // cov (3x3) , How much it is pointing towards each axis
-    orientation = eigenvectors.clone(); // rotation
+    axes = eigenvalues.clone();
+    orientation = eigenvectors.clone();
     center = mean.clone();
 
-    // can try optimize this later
-    t = cv::Vec3f(
-        center.at<float>(0,0),
-        center.at<float>(1,0),
-        center.at<float>(2,0)
-    );
-    
-    // Convert variance → actual size
+    // Convert variance → scale
     cv::sqrt(axes, axes);
-    
-    R = orientation.t();  
-    Eigen::Matrix3f R_eigen;
-    cv::cv2eigen(R, R_eigen);
-    if(R_eigen.determinant() < 0)
+
+    // --- Build SE3 pose ---
+    cv::Mat R_cv = orientation.t();  // object → world
+
+    // use DOUBLE from the start
+    Eigen::Matrix3d R_eigen;
+    cv::cv2eigen(R_cv, R_eigen);
+
+    // --- SVD orthogonalization ---
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(
+        R_eigen, Eigen::ComputeFullU | Eigen::ComputeFullV
+    );
+
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+
+    // Proper rotation projection
+    Eigen::Matrix3d R_fixed = U * V.transpose();
+
+    // Ensure right-handed system
+    if(R_fixed.determinant() < 0)
     {
-        // Flip one axis (usually the smallest eigenvalue axis)
-        R.row(2) *= -1;
-
-        // Recompute Eigen version
-        cv::cv2eigen(R, R_eigen);
+        U.col(2) *= -1;
+        R_fixed = U * V.transpose();
     }
-    Eigen::Vector3f t_eigen(t[0], t[1], t[2]);
 
-    // Pose(R | T)
-    T_obj = Sophus::SE3<float>(R_eigen, t_eigen);
+    // --- translation (double directly) ---
+    Eigen::Vector3d t_d(
+        center.at<float>(0),
+        center.at<float>(1),
+        center.at<float>(2)
+    );
 
-    // FIll in ellipsoidal points
-    const int steps = 20;
+    // --- Final SE3 ---
+    T_obj = Sophus::SE3d(R_fixed, t_d);
+    
+    // --- Generate LOCAL ellipsoid points ONLY ---
+    ellipsoidPointsLocal.clear();
+
+    const int steps = 10;  // reduce for performance
 
     float a = axes.at<float>(0,0);
     float b = axes.at<float>(1,0);
@@ -157,55 +163,62 @@ void DynamicObject::FitEllipsoid()
 
     for(int i = 0; i < steps; i++)
     {
-        float theta = CV_PI * i / steps; // 0 → π
+        float theta = CV_PI * i / steps;
 
         for(int j = 0; j < steps; j++)
         {
-            float phi = 2 * CV_PI * j / steps; // 0 → 2π
+            float phi = 2 * CV_PI * j / steps;
 
-            // Unit sphere
             float x = sin(theta) * cos(phi);
             float y = sin(theta) * sin(phi);
             float z = cos(theta);
 
-            // Scale → ellipsoid
-            cv::Mat pt = (cv::Mat_<float>(3,1) << a*x, b*y, c*z);
-
-            // Rotate
-            pt = orientation * pt;
-
-            // Translate
-            pt += center;
-
-            ellipsoidPoints.emplace_back(
-                pt.at<float>(0),
-                pt.at<float>(1),
-                pt.at<float>(2)
+            // LOCAL frame (NO rotation, NO translation)
+            ellipsoidPointsLocal.emplace_back(
+                a * x,
+                b * y,
+                c * z
             );
         }
     }
-    
 }
 
 void DynamicObject::DrawEllipsoid2D(
     cv::Mat &image,
-    const cv::Mat &K // camera intrinsic matrix
+    const cv::Mat &K,
+    const Sophus::SE3<float> &Tcw   // ADD THIS
 )
 {
-    for(const auto &p : ellipsoidPoints)
+    double fx = K.type() == CV_32F ? K.at<float>(0,0) : K.at<double>(0,0);
+    double fy = K.type() == CV_32F ? K.at<float>(1,1) : K.at<double>(1,1);
+    double cx = K.type() == CV_32F ? K.at<float>(0,2) : K.at<double>(0,2);
+    double cy = K.type() == CV_32F ? K.at<float>(1,2) : K.at<double>(1,2);
+
+    for(const auto &p : ellipsoidPointsLocal)
     {
-        cv::Mat pt3D = (cv::Mat_<float>(3,1) << p.x, p.y, p.z);
+        // LOCAL → Eigen
+        // local → double
+        Eigen::Vector3d pt_local(p.x, p.y, p.z);
 
-        // Project to 2D: x' = K * X
-        cv::Mat proj = K * pt3D;
+        // object transform
+        Eigen::Vector3d pt_world = T_obj * pt_local;
 
-        float u = proj.at<float>(0) / proj.at<float>(2);
-        float v = proj.at<float>(1) / proj.at<float>(2);
+        // camera transform (convert ONCE)
+        Sophus::SE3d Tcw_d = Tcw.cast<double>();
+
+        Eigen::Vector3d pt_cam = Tcw_d * pt_world;
+
+        if(pt_cam.z() <= 0) continue;
+
+        // CAMERA → IMAGE
+        double u = fx * pt_cam.x() / pt_cam.z() + cx;
+        double v = fy * pt_cam.y() / pt_cam.z() + cy;
 
         if(u >= 0 && u < image.cols &&
            v >= 0 && v < image.rows)
         {
-            cv::circle(image, cv::Point(u,v), 1, cv::Scalar(0,255,0), -1);
+            cv::circle(image, cv::Point(u,v), 1,
+                       cv::Scalar(0,255,0), -1);
         }
     }
 }

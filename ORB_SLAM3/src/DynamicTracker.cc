@@ -58,26 +58,29 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     // cv::waitKey(1);
     cv::Mat frame;
     cv::cvtColor(mCurrentFrame.mImGray.clone(), frame, cv::COLOR_GRAY2BGR);
-    
+
     for(const auto& cluster : clusters){
         std::vector<cv::Point3f> objCurr;
-
+        std::vector<cv::KeyPoint> objCurr2D;
         for(int idx : cluster)
         {
             objCurr.push_back(mCurrentFrame.mvDynamicPoints3D[idx]);
+            objCurr2D.push_back(mCurrentFrame.mvDynamicKeys[idx]);
         }
-        
+         
         DynamicObject obj(0);
-        obj.Update(objCurr);
+        obj.Update(objCurr, objCurr2D);
         obj.ComputeCentroid();
         obj.FitEllipsoid();
-        obj.DrawEllipsoid2D(frame, mCurrentFrame.mK);
+        obj.DrawEllipsoid2D(frame, mCurrentFrame.mK, mCurrentFrame.GetPose());
         CurrentObjects.push_back(obj);
     }
 
-    cv::imshow("Ellipsoids", frame);
-    cv::waitKey(1);
-
+    if(!frame.empty()) {
+        cv::imshow("Ellipsoids", frame);
+        cv::waitKey(1);
+    }
+    
     mCurrentFrame.mDynamicObjects = CurrentObjects;
     PrevObjects = mLastFrame.mDynamicObjects;
 
@@ -116,117 +119,145 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
         }
     }
     
-    if (PrevObjects.size()!=0 && CurrentObjects.size()!=0) {
-        
-        // Compute sigma
-        float sigma_d = computeSigma(dist_vect);
-        float sigma_m = computeSigma(motion_vect);
-        float sigma_s = computeSigma(size_vect);
-        
-        sigma_d = std::max(sigma_d, 1e-3f);
-        sigma_m = std::max(sigma_m, 1e-3f);
-        sigma_s = std::max(sigma_s, 1e-3f);
+    if (CurrentObjects.size() > 0) {
+        // [1,1] or [1,0]
+        if (PrevObjects.size() > 0) {
+            // [1,1]
+            // Compute sigma
+            float sigma_d = computeSigma(dist_vect);
+            float sigma_m = computeSigma(motion_vect);
+            float sigma_s = computeSigma(size_vect);
+            
+            sigma_d = std::max(sigma_d, 1e-3f);
+            sigma_m = std::max(sigma_m, 1e-3f);
+            sigma_s = std::max(sigma_s, 1e-3f);
 
-        std::cout
-            << " sigma_d: " << sigma_d << std::setw(25)
-            << " sigma_m: " << sigma_m << std::setw(25)
-            << " sigma_s: " << sigma_s << std::endl;
+            std::cout
+                << " sigma_d: " << sigma_d << std::setw(25)
+                << " sigma_m: " << sigma_m << std::setw(25)
+                << " sigma_s: " << sigma_s << std::endl;
 
-        int N = PrevObjects.size();
-        int M = CurrentObjects.size();
+            int N = PrevObjects.size();
+            int M = CurrentObjects.size();
 
-        std::vector<std::vector<float>> costMatrix(N, std::vector<float>(M, 1e6));
+            std::vector<std::vector<float>> costMatrix(N, std::vector<float>(M, 1e6));
 
-        // Fill up Cost Matrix
-        for(int i = 0; i < N; i++)
-        {
-            for(int j = 0; j < M; j++)
+            // Fill up Cost Matrix
+            for(int i = 0; i < N; i++)
             {
-                float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
-                float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
-                float m_score = -1; 
-                float motion = 0;
+                for(int j = 0; j < M; j++)
+                {
+                    float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
+                    float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
+                    float m_score = -1; 
+                    float motion = 0;
 
-                if (PrevObjects[i].velocity.x != -1000) {
-                    cv::Point3f predicted = PrevObjects[i].centroid3D + PrevObjects[i].velocity;
-                    motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
-                } 
+                    if (PrevObjects[i].velocity.x != -1000) {
+                        cv::Point3f predicted = PrevObjects[i].centroid3D + PrevObjects[i].velocity;
+                        motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
+                    } 
 
-                float d_score = (dist*dist)/(sigma_d*sigma_d);
-                float s_score = (sizeDiff*sizeDiff)/(sigma_s*sigma_s);
-                m_score = (motion*motion)/(sigma_m*sigma_m);
+                    float d_score = (dist*dist)/(sigma_d*sigma_d);
+                    float s_score = (sizeDiff*sizeDiff)/(sigma_s*sigma_s);
+                    m_score = (motion*motion)/(sigma_m*sigma_m);
 
-                float totalScore = d_score + m_score + s_score;
-                std::cout
-                    << " d_score: " << d_score << std::setw(25)
-                    << " m_score: " << m_score << std::setw(25)
-                    << " s_score: " << s_score << std::endl;
+                    float totalScore = d_score + m_score + s_score;
+                    std::cout
+                        << " d_score: " << d_score << std::setw(25)
+                        << " m_score: " << m_score << std::setw(25)
+                        << " s_score: " << s_score << std::endl;
 
-                // Gating
-                if(totalScore < 50.0f)
-                    costMatrix[i][j] = totalScore;
-            }
-        } 
+                    // Gating
+                    if(totalScore < 50.0f)
+                        costMatrix[i][j] = totalScore;
+                }
+            } 
 
-        // [A1, A2, A3] -> Prev Obj
-        // [1,  0,  2] -> [A1->B2,  A2->B1,  A3->B3]
-        // [B1, B2, B3] -> Curr Obj
-        
-        std::vector<int> assignment = hungarian_solver.solve(costMatrix);
-        std::cout << "Assignments: " << assignment.size() << std::endl;
-        std::vector<bool> used(CurrentObjects.size(), false);
-        std::cout << std::endl;
+            // [A1, A2, A3] -> Prev Obj
+            // [1,  0,  2] -> [A1->B2,  A2->B1,  A3->B3]
+            // [B1, B2, B3] -> Curr Obj
+            
+            std::vector<int> assignment = hungarian_solver.solve(costMatrix);
+            std::cout << "Assignments: " << assignment.size() << std::endl;
+            std::vector<bool> used(CurrentObjects.size(), false);
+            std::cout << std::endl;
 
-        std::vector<DynamicObject> alignedObjects; 
-        int it=0;
-        int idx =0;
+            std::vector<DynamicObject> alignedObjects; 
+            int it=0;
+            int idx =0;
 
-        for(int it = 0; it < assignment.size(); it++)
-        {
-            int j = assignment[it];
-            std::cout << j << "\t";
-            if(j == -1) 
+            for(int it = 0; it < assignment.size(); it++)
             {
-                std::cout << "Tracking lost\n";
-                continue;
+                int j = assignment[it];
+                
+                if(j == -1) 
+                {
+                    std::cout << "Tracking lost\n";
+                    continue;
+                }
+
+                DynamicObject obj = CurrentObjects[j];
+
+                if(onInitialization)
+                {
+                    obj.id = next_id++;
+                }
+                else
+                {
+                    obj.id = PrevObjects[it].id;
+                    obj.velocity = obj.centroid3D - PrevObjects[it].centroid3D;
+                }
+
+                alignedObjects.push_back(obj);
+                used[j] = true;
             }
 
-            DynamicObject obj = CurrentObjects[j];
-
-            if(onInitialization)
+            // Handle NEW objects
+            for(int j = 0; j < CurrentObjects.size(); j++)
             {
-                obj.id = next_id++;
-            }
-            else
-            {
-                obj.id = PrevObjects[it].id;
-                obj.velocity = obj.centroid3D - PrevObjects[it].centroid3D;
+                if(!used[j])
+                {
+                    DynamicObject obj = CurrentObjects[j];
+                    obj.id = next_id++;
+                    alignedObjects.push_back(obj);
+                }
             }
 
-            alignedObjects.push_back(obj);
-            used[j] = true;
-        }
-
-        // Handle NEW objects
-        for(int j = 0; j < CurrentObjects.size(); j++)
-        {
-            if(!used[j])
+            mCurrentFrame.mDynamicObjects = alignedObjects;
+            onInitialization = false;
+            onTrackingLost = false;
+        } else { // [0,1]
+                // HANDLE NEW OBJ
+            std::vector<DynamicObject> alignedObjects; 
+            for(int j = 0; j < CurrentObjects.size(); j++)
             {
                 DynamicObject obj = CurrentObjects[j];
                 obj.id = next_id++;
                 alignedObjects.push_back(obj);
             }
+            mCurrentFrame.mDynamicObjects = alignedObjects;
+            onInitialization = false;
+            onTrackingLost = false;
         }
-
-        mCurrentFrame.mDynamicObjects = alignedObjects;
-
-        onInitialization = false;
-        } else {
-            onInitialization = true;
-            next_id = 0;
+    } else { //[1,0]
+        if (PrevObjects.size()>0) {
+            onTrackingLost = true;
+            std::cout << "1->0 condition, Tracking Lost !" << std::endl;
+        } else { // [0,0]
+            if (!onTrackingLost) {
+                onInitialization = true;
+                next_id = 0;
+            }
         }
+        
+    }
     
-    
+    for(int j = 0; j < mCurrentFrame.mDynamicObjects.size(); j++)
+    {
+        std::cout << mCurrentFrame.mDynamicObjects[j].id << "\t";
+    }
+
+    std::cout << "\nNext ID: " << next_id << std::endl;
     //mCurrentFrame.mDynamicObjects = alignedObjects;
     std::cout << std::endl;
 }
@@ -409,7 +440,6 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints2(
                 continue;
             
             int gx, gy;
-            // mCurrentFrame.PosInGrid(mCurrentFrame.mvDynamicKeys[curr_idx], gx, gy);
             // // Get correct grid cell of THIS point
             // std::cout << "gx: " << gx << "\tgy: " << gy << std::endl;
             gx = mCurrentFrame.mvDynamicGridPos[curr_idx].first;
@@ -419,8 +449,8 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints2(
 
             if (gx < 0 || gy < 0) continue;
 
-            int cell_offset_x = 30;
-            int cell_offset_y = 30;
+            int cell_offset_x = 40;
+            int cell_offset_y = 40;
             // Explore neighboring cells (3x3 cells around the center)
             for(int dx = -cell_offset_x; dx <= cell_offset_x; dx++)
             {
@@ -484,8 +514,6 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints2(
                                     visited[j_int] = true;
                                     q.push(j_int);
                                 }
-                                // found = true;
-                                // break;
                             }
                         }
                         

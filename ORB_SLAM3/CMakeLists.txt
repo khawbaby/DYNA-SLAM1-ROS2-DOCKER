@@ -95,6 +95,7 @@ src/DynamicObject.cc
 src/DynamicTracker.cc
 src/Hungarian.cc
 src/VertexObject.cc
+src/EdgeObjectMotion.cc
 src/EdgeCameraObject.cc
 include/System.h
 include/Tracking.h
@@ -130,6 +131,7 @@ include/DynamicObject.h
 include/DynamicTracker.h
 include/Hungarian.h
 include/VertexObject.h
+include/EdgeObjectMotion.h
 include/EdgeCameraObject.h
 )
 

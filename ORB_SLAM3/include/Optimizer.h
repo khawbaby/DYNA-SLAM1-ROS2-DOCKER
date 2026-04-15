@@ -38,6 +38,12 @@
 #include "Thirdparty/g2o/g2o/core/robust_kernel_impl.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_dense.h"
 
+#include <mutex>
+#include "OptimizableTypes.h"
+#include "VertexObject.h"
+#include "EdgeObjectMotion.h"
+#include "EdgeCameraObject.h"
+
 namespace ORB_SLAM3
 {
 
@@ -57,6 +63,7 @@ public:
     void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges);
 
     int static PoseOptimization(Frame* pFrame);
+    int static PoseOptimization(Frame* pFrame, Frame* prevFrame);
     int static PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit = false);
     int static PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit = false);
 

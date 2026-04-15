@@ -20,10 +20,13 @@ public:
     int id;
 
     Eigen::Matrix3f R_eigen;
-    Sophus::SE3<float> T_obj;
+    Sophus::SE3<double> T_obj;
+
+    std::vector<cv::KeyPoint> points2D;
     std::vector<cv::Point3f> points3D;
     std::vector<cv::Point3f> prevPoints3D;
     std::vector<cv::Point3f> ellipsoidPoints;
+    std::vector<cv::Point3f> ellipsoidPointsLocal;
 
     cv::Mat R;  // rotation
     cv::Mat axes;        // 3x1
@@ -31,11 +34,14 @@ public:
     cv::Mat center;      // 3x1 (optional, same as centroid)
     cv::Vec3f t; // translation
 
+    cv::Point2f centroid2D;
+
     cv::Point3f centroid3D;
     cv::Point3f prevCentroid3D = cv::Point3f(-1.0f, -1.0f, -1.0f); 
     cv::Point3f velocity = cv::Point3f(-1000.0f, -1.0f, -1.0f);
     cv::Point3d axes3D;
 
+    bool has2DObservation;
     int age;    
     bool isActive;
 
@@ -44,13 +50,14 @@ public:
     void Update(const std::vector<cv::Point3f>& newPoints,
                 const std::vector<cv::Point3f>& prevPoints);
 
-    void Update(const std::vector<cv::Point3f>& newPoints);
+    void Update(const std::vector<cv::Point3f>& newPoints, const std::vector<cv::KeyPoint>& newPoints2D);
     void ComputeCentroid();
     void FitEllipsoid();
 
     void DrawEllipsoid2D(
         cv::Mat &image,
-        const cv::Mat &K // camera intrinsic matrix
+        const cv::Mat &K, // camera intrinsic matrix
+        const Sophus::SE3<float> &Tcw  
     );
 
 };
