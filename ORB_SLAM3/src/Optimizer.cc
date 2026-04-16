@@ -1394,6 +1394,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
 
     std::vector<DynamicObject> CurrObjects = pFrame->mDynamicObjects;
     std::vector<DynamicObject> PrevObjects = prevFrame->mDynamicObjects;
+
     // --- Add motion edges --- obj2obj
     for(auto& curr : pFrame->mDynamicObjects)
     {
@@ -1434,33 +1435,80 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         optimizer.addEdge(e);
     }
 
-    // --- Add motion edges --- obj2cam
+    // --- Add dynamic reprojection constraint edge --- obj -> cam
+    // -------------- Centroid only --------------
+    // for(auto& obj : pFrame->mDynamicObjects)
+    // {
+    //     if(!obj.has2DObservation) continue;
+
+    //     EdgeCameraObject* e = new EdgeCameraObject();
+
+    //     e->setVertex(0, vSE3);                        // camera
+    //     e->setVertex(1, currObjVertices[obj.id]);      // object
+
+    //     e->X_obj = Eigen::Vector3d(0,0,0);            // object center
+        
+    //     Eigen::Vector2d obs;
+    //     obs << obj.centroid2D.x, obj.centroid2D.y;
+
+    //     e->setMeasurement(obs);
+    //     e->pCamera = pFrame->mpCamera;
+
+    //     e->setInformation(Eigen::Matrix2d::Identity());
+
+    //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+    //     e->setRobustKernel(rk);
+    //     rk->setDelta(sqrt(5.991));
+
+    //     optimizer.addEdge(e);
+    // }
+
     for(auto& obj : pFrame->mDynamicObjects)
     {
         if(!obj.has2DObservation) continue;
 
-        EdgeCameraObject* e = new EdgeCameraObject();
+        // Loop through multiple local points
+        for(int i = 0; i < obj.ellipsoidPointsLocal.size(); i++)
+        {
+            const cv::KeyPoint& kp = obj.points2D[i];
+            EdgeCameraObject* e = new EdgeCameraObject();
+            
+            e->setVertex(0, vSE3);     // camera
+            e->setVertex(1, currObjVertices[obj.id]);     // object
+            
+            Eigen::Vector3d ellipsoidPointLocal_double(
+                static_cast<double>(obj.ellipsoidPointsLocal[i].x),
+                static_cast<double>(obj.ellipsoidPointsLocal[i].y),
+                static_cast<double>(obj.ellipsoidPointsLocal[i].z)
+            );
 
-        e->setVertex(0, vSE3);                        // camera
-        e->setVertex(1, currObjVertices[obj.id]);      // object
 
-        e->X_obj = Eigen::Vector3d(0,0,0);            // object center
-        
-        Eigen::Vector2d obs;
-        obs << obj.centroid2D.x, obj.centroid2D.y;
+            e->X_obj = ellipsoidPointLocal_double;          //  key difference
 
-        e->setMeasurement(obs);
-        e->pCamera = pFrame->mpCamera;
+            // --- Project this point to get measurement ---
+            // (you need to project using current estimate)
 
-        e->setInformation(Eigen::Matrix2d::Identity());
+            // Eigen::Vector3d Pw = obj.T_obj * X_obj;       
+            // Eigen::Vector3d Pc = pFrame->mTcw * Pw;        
+            // if(Pc[2] <= 0) continue; 
+            // Eigen::Vector2d uv = pFrame->mpCamera->project(Pc);
 
-        g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-        e->setRobustKernel(rk);
-        rk->setDelta(sqrt(5.991));
+            Eigen::Vector2d obs;
+            obs << kp.pt.x, kp.pt.y;
+            e->setMeasurement(obs);
+            e->pCamera = pFrame->mpCamera;
 
-        optimizer.addEdge(e);
+            // --- Information ---
+            e->setInformation((1.0 / 9.0) * Eigen::Matrix2d::Identity());
+
+            // --- Robust kernel ---
+            auto* rk = new g2o::RobustKernelHuber;
+            e->setRobustKernel(rk);
+            rk->setDelta(std::sqrt(5.991));
+
+            optimizer.addEdge(e);
+        }
     }
-
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={5.991,5.991,5.991,5.991};
