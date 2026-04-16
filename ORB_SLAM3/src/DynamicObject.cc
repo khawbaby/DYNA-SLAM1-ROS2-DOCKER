@@ -95,7 +95,7 @@ void DynamicObject::FitEllipsoid()
         mean.at<float>(2) += p.z;
     }
     mean /= (float)points3D.size();
-
+    
     // --- Covariance ---
     cv::Mat cov = cv::Mat::zeros(3,3,CV_32F);
     for(auto &p : points3D)

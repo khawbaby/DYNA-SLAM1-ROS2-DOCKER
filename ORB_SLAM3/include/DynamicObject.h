@@ -22,6 +22,7 @@ public:
     Eigen::Matrix3f R_eigen;
     Sophus::SE3<double> T_obj;
 
+    std::vector<Eigen::Vector3d> points3D_local;
     std::vector<cv::KeyPoint> points2D;
     std::vector<cv::Point3f> points3D;
     std::vector<cv::Point3f> prevPoints3D;

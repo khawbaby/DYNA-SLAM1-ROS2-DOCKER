@@ -206,7 +206,6 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
                 {
                     obj.id = PrevObjects[it].id;
                     obj.velocity = obj.centroid3D - PrevObjects[it].centroid3D;
-                    //obj.velocity2D = obj.centroid2D - PrevObjects[it].centroid2D;
                 }
 
                 alignedObjects.push_back(obj);
@@ -225,6 +224,16 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
             }
 
             mCurrentFrame.mDynamicObjects = alignedObjects;
+            
+            for(auto &obj : mCurrentFrame.mDynamicObjects) {
+                for(int i=0; i<obj.points3D.size(); i++) {
+                    Eigen::Vector3d Pw = Converter::toVector3d(obj.points3D[i]);
+                    Eigen::Vector3d X_obj = obj.T_obj.inverse() * Pw;
+
+                    obj.points3D_local.push_back(X_obj);
+                }
+            }
+
             onInitialization = false;
             onTrackingLost = false;
         } else { // [0,1]

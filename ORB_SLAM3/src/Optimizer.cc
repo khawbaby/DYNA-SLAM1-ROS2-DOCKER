@@ -1467,39 +1467,39 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     {
         if(!obj.has2DObservation) continue;
 
-        // Loop through multiple local points
-        for(int i = 0; i < obj.ellipsoidPointsLocal.size(); i++)
+        auto it = currObjVertices.find(obj.id);
+        if(it == currObjVertices.end()) continue;
+
+        VertexObject* vObj = it->second;
+
+        int N = std::min(obj.points2D.size(), obj.points3D_local.size());
+        if(N < 3) continue;
+
+        for(int i = 0; i < N; i++)
         {
             const cv::KeyPoint& kp = obj.points2D[i];
+            const Eigen::Vector3d& X_obj = obj.points3D_local[i];
+
+            // --- Safety checks ---
+            if(!X_obj.allFinite()) continue;
+
             EdgeCameraObject* e = new EdgeCameraObject();
-            
-            e->setVertex(0, vSE3);     // camera
-            e->setVertex(1, currObjVertices[obj.id]);     // object
-            
-            Eigen::Vector3d ellipsoidPointLocal_double(
-                static_cast<double>(obj.ellipsoidPointsLocal[i].x),
-                static_cast<double>(obj.ellipsoidPointsLocal[i].y),
-                static_cast<double>(obj.ellipsoidPointsLocal[i].z)
-            );
 
+            e->setVertex(0, vSE3);   // camera
+            e->setVertex(1, vObj);   // object
 
-            e->X_obj = ellipsoidPointLocal_double;          //  key difference
-
-            // --- Project this point to get measurement ---
-            // (you need to project using current estimate)
-
-            // Eigen::Vector3d Pw = obj.T_obj * X_obj;       
-            // Eigen::Vector3d Pc = pFrame->mTcw * Pw;        
-            // if(Pc[2] <= 0) continue; 
-            // Eigen::Vector2d uv = pFrame->mpCamera->project(Pc);
+            e->X_obj = X_obj;
 
             Eigen::Vector2d obs;
             obs << kp.pt.x, kp.pt.y;
+
+            if(!obs.allFinite()) continue;
+
             e->setMeasurement(obs);
             e->pCamera = pFrame->mpCamera;
 
-            // --- Information ---
-            e->setInformation((1.0 / 9.0) * Eigen::Matrix2d::Identity());
+            // --- Information (pixel noise ~2px) ---
+            e->setInformation((1.0 / 4.0) * Eigen::Matrix2d::Identity());
 
             // --- Robust kernel ---
             auto* rk = new g2o::RobustKernelHuber;
