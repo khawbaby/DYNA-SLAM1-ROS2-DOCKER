@@ -1003,7 +1003,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     int objIdStart = 10000;
     
     // --- Create vertices ---
-    // std::map<int, VertexObject*> objectVertices;
+    // std::map<int, VertexObject*> currObjVertices;
 
     // for(auto& obj : mCurrentFrame.mDynamicObjects)
     // {
@@ -1018,7 +1018,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
     //     optimizer.addVertex(vObj);
 
-    //     objectVertices[obj.id] = vObj;
+    //     currObjVertices[obj.id] = vObj;
     // }
 
     // // --- Add motion edges ---
@@ -1039,8 +1039,8 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
     //     EdgeObjectMotion* e = new EdgeObjectMotion();
 
-    //     e->setVertex(0, objectVertices[prev.id]);
-    //     e->setVertex(1, objectVertices[curr.id]);
+    //     e->setVertex(0, currObjVertices[prev.id]);
+    //     e->setVertex(1, currObjVertices[curr.id]);
 
     //     e->setMeasurement(T_motion);
 
@@ -1216,7 +1216,6 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     // Add Edges
     for(int i=0; i<N; i++)
     {
-        if(pFrame->mvbDynamic[i]) continue;
         MapPoint* pMP = pFrame->mvpMapPoints[i];
         if(pMP)
         {
@@ -1359,8 +1358,9 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     int objIdStart = 10000;
     
     // --- Create vertices ---
-    std::map<int, VertexObject*> objectVertices;
-
+    std::map<int, VertexObject*> currObjVertices;
+    std::map<int, VertexObject*> prevObjVertices;
+    
     for(auto& obj : pFrame->mDynamicObjects)
     {
         VertexObject* vObj = new VertexObject();
@@ -1374,36 +1374,61 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
 
         optimizer.addVertex(vObj);
 
-        objectVertices[obj.id] = vObj;
+        currObjVertices[obj.id] = vObj;
+    }
+
+    
+    for(auto& obj : prevFrame->mDynamicObjects)
+    {
+        VertexObject* vObj = new VertexObject();
+
+        vObj->setId(obj.id + 2000);   // DIFFERENT offset
+        vObj->setEstimate(obj.T_obj);
+
+        vObj->setFixed(true);  // anchor previous frame (important)
+
+        optimizer.addVertex(vObj);
+
+        prevObjVertices[obj.id] = vObj;
     }
 
     std::vector<DynamicObject> CurrObjects = pFrame->mDynamicObjects;
     std::vector<DynamicObject> PrevObjects = prevFrame->mDynamicObjects;
     // --- Add motion edges --- obj2obj
-    for(auto& curr : CurrObjects)
+    for(auto& curr : pFrame->mDynamicObjects)
     {
         auto it_prev = std::find_if(
-            PrevObjects.begin(), PrevObjects.end(),
+            prevFrame->mDynamicObjects.begin(),
+            prevFrame->mDynamicObjects.end(),
             [&](const DynamicObject& o){ return o.id == curr.id; }
         );
 
-        if(it_prev == PrevObjects.end())
+        if(it_prev == prevFrame->mDynamicObjects.end())
             continue;
 
         const DynamicObject& prev = *it_prev;
+        if (prev.velocity.x < -999 )
+            continue;
 
-        Sophus::SE3d T_motion =
-            (prev.T_obj.inverse() * curr.T_obj).cast<double>();
+        Eigen::Vector3d t(
+            prev.velocity.x,
+            prev.velocity.y,
+            prev.velocity.z
+        );
+        // assume no rotation for now
+        Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
+
+        Sophus::SE3d T_motion(R, t);
 
         EdgeObjectMotion* e = new EdgeObjectMotion();
 
-        e->setVertex(0, objectVertices[prev.id]);
-        e->setVertex(1, objectVertices[curr.id]);
+        e->setVertex(0, prevObjVertices[prev.id]);   // t-1
+        e->setVertex(1, currObjVertices[curr.id]);   // t
 
         e->setMeasurement(T_motion);
 
         e->setInformation(
-            0.01 * Eigen::Matrix<double,6,6>::Identity()
+            0.1 * Eigen::Matrix<double,6,6>::Identity()
         );
 
         optimizer.addEdge(e);
@@ -1417,7 +1442,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         EdgeCameraObject* e = new EdgeCameraObject();
 
         e->setVertex(0, vSE3);                        // camera
-        e->setVertex(1, objectVertices[obj.id]);      // object
+        e->setVertex(1, currObjVertices[obj.id]);      // object
 
         e->X_obj = Eigen::Vector3d(0,0,0);            // object center
         

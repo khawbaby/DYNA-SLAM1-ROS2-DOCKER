@@ -35,6 +35,7 @@ public:
     cv::Vec3f t; // translation
 
     cv::Point2f centroid2D;
+    cv::Point2f velocity2D;
 
     cv::Point3f centroid3D;
     cv::Point3f prevCentroid3D = cv::Point3f(-1.0f, -1.0f, -1.0f); 

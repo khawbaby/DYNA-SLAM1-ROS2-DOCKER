@@ -206,6 +206,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
                 {
                     obj.id = PrevObjects[it].id;
                     obj.velocity = obj.centroid3D - PrevObjects[it].centroid3D;
+                    //obj.velocity2D = obj.centroid2D - PrevObjects[it].centroid2D;
                 }
 
                 alignedObjects.push_back(obj);
