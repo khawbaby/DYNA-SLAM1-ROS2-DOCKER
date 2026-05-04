@@ -7,7 +7,8 @@
 
 #include <opencv2/core/core.hpp>
 #include <cv_bridge/cv_bridge.h>
-
+#include <chrono>
+#include <deque>
 namespace ORB_SLAM3_Wrapper
 {
     using namespace WrapperTypeConversions;
@@ -93,11 +94,29 @@ namespace ORB_SLAM3_Wrapper
         // ===== HANDLE EMPTY MASK =====
         if (mask_copy.empty()) {
             mask_copy = cv::Mat::ones(cvRGB->image.size(), CV_8UC1);
-        }
-    
+        } 
+
+        auto start = std::chrono::high_resolution_clock::now();
         // track the frame.
         auto Tcw = interface()->slam()->TrackRGBD(cvRGB->image, cvD->image, mask_copy, stampToSec(msgRGB->header.stamp));
         
+        if (!mask_copy.empty()) {
+            auto end = std::chrono::high_resolution_clock::now();
+            double time_ms = std::chrono::duration<double, std::milli>(end - start).count();
+            times.push_back(time_ms);
+            if(times.size() > window)
+                times.pop_front();
+
+            double sum = 0;
+            for(double t : times) sum += t;
+
+            double avg = sum / times.size();
+            double fps = 1000.0 / avg;
+
+            std::cout << "sum: " << sum << std::endl;
+            std::cout << "Times size: " << times.size() << std::endl;
+            std::cout << "FPS (smoothed): " << fps << std::endl;
+        }
         // process the tracked pose.
         if (interface()->processTrackedPose(Tcw))
         {

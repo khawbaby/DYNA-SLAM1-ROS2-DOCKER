@@ -41,10 +41,10 @@ public:
     std::vector<std::pair<int,int>> idx_matches;
     int next_id;
     const float DIST_THRESH   = 0.4f;
-    const float MOTION_THRESH = 0.1f;
+    const float MOTION_THRESH = 0.5f;
 
     DynamicTracker();
-
+    const int MAX_MISSED_FRAMES = 5;   // tune (3–10 typical)
     bool isSamePoint(const cv::Point3f& a, const cv::Point3f& b, float eps = 1e-3f)
     {
         return cv::norm(a - b) < eps;
@@ -64,6 +64,8 @@ public:
         const std::vector<cv::Point3f>& _prevPoints,
         const std::vector<std::pair<int,int>>& _dynamicMatchesIndex
     );
+
+    
 
 private:
     Hungarian hungarian_solver;

@@ -31,7 +31,8 @@
 #include "KannalaBrandt8.h"
 #include "MLPnPsolver.h"
 #include "GeometricTools.h"
-
+#include <chrono>
+#include <deque>
 #include <iostream>
 
 #include <mutex>
@@ -1957,6 +1958,25 @@ void Tracking::Track()
     // =====================
    
     // ===================== V2  =======================
+    // std::deque<double> times;
+    // const int window = 30;
+    // auto start = std::chrono::high_resolution_clock::now();
+    // mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
+    // auto end = std::chrono::high_resolution_clock::now();
+    // double time_ms = std::chrono::duration<double, std::milli>(end - start).count();
+    // times.push_back(time_ms);
+    // if(times.size() > window)
+    //     times.pop_front();
+
+    // double sum = 0;
+    // for(double t : times) sum += t;
+
+    // double avg = sum / times.size();
+    // double fps = 1000.0 / avg;
+
+    // std::cout << "sum: " << sum << std::endl;
+    // std::cout << "Times size: " << times.size() << std::endl;
+    // std::cout << "FPS (smoothed): " << fps << std::endl;
 
     std::vector<cv::Point2f> prevPts, currPts;
     std::vector<int> currIdx;

@@ -42,9 +42,9 @@
 #include "System.h"
 #include "ImuTypes.h"
 #include "Settings.h"
-
 #include "GeometricCamera.h"
-
+#include <chrono>
+#include <deque>
 #include <mutex>
 #include <unordered_set>
 

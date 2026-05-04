@@ -223,6 +223,159 @@ void DynamicObject::DrawEllipsoid2D(
     }
 }
 
+void DynamicObject::UpdatePoseFromState()
+{
+    // --- Build rotation from stored orientation ---
+    cv::Mat R_cv = orientation.t();  // same as before
 
+    Eigen::Matrix3d R_eigen;
+    cv::cv2eigen(R_cv, R_eigen);
 
+    // Orthogonalize (same as your code)
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(
+        R_eigen, Eigen::ComputeFullU | Eigen::ComputeFullV
+    );
+
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+
+    Eigen::Matrix3d R_fixed = U * V.transpose();
+
+    if(R_fixed.determinant() < 0)
+    {
+        U.col(2) *= -1;
+        R_fixed = U * V.transpose();
+    }
+
+    // --- Translation from centroid ---
+    Eigen::Vector3d t(
+        centroid3D.x,
+        centroid3D.y,
+        centroid3D.z
+    );
+
+    T_obj = Sophus::SE3d(R_fixed, t);
+
+    ellipsoidPointsLocal.clear();
+
+    const int steps = 10;  // reduce for performance
+
+    float a = axes.at<float>(0,0);
+    float b = axes.at<float>(1,0);
+    float c = axes.at<float>(2,0);
+
+    for(int i = 0; i < steps; i++)
+    {
+        float theta = CV_PI * i / steps;
+
+        for(int j = 0; j < steps; j++)
+        {
+            float phi = 2 * CV_PI * j / steps;
+
+            float x = sin(theta) * cos(phi);
+            float y = sin(theta) * sin(phi);
+            float z = cos(theta);
+
+            // LOCAL frame (NO rotation, NO translation)
+            ellipsoidPointsLocal.emplace_back(
+                a * x,
+                b * y,
+                c * z
+            );
+        }
+    }
+}
+
+void DynamicObject::UpdateFromMeasurement(
+    const DynamicObject& meas,
+    const DynamicObject& prev)
+{
+    // --- Initialize if needed ---
+    if(!kf_initialized)
+    {
+        centroid3D = meas.centroid3D;
+        InitKalman();
+    }
+
+    // =========================
+    // 1. PREDICTION
+    // =========================
+    Eigen::Matrix<float,6,6> F = Eigen::Matrix<float,6,6>::Identity();
+    F(0,3) = 1; F(1,4) = 1; F(2,5) = 1;
+
+    Eigen::Matrix<float,6,6> Q = Eigen::Matrix<float,6,6>::Identity() * 0.01f;
+
+    kf_x = F * kf_x;
+    kf_P = F * kf_P * F.transpose() + Q;
+
+    // =========================
+    // 2. MEASUREMENT
+    // =========================
+    Eigen::Matrix<float,3,6> H;
+    H.setZero();
+    H(0,0)=1; H(1,1)=1; H(2,2)=1;
+
+    Eigen::Matrix3f R = Eigen::Matrix3f::Identity();
+    R(0,0) = 0.05f;
+    R(1,1) = 0.05f;
+    R(2,2) = 0.5f;   // 🔥 depth noisy
+
+    Eigen::Vector3f z;
+    z << meas.centroid3D.x,
+         meas.centroid3D.y,
+         meas.centroid3D.z;
+
+    // =========================
+    // 3. UPDATE
+    // =========================
+    Eigen::Vector3f y = z - H * kf_x;
+
+    Eigen::Matrix3f S = H * kf_P * H.transpose() + R;
+    Eigen::Matrix<float,6,3> K = kf_P * H.transpose() * S.inverse();
+
+    kf_x = kf_x + K * y;
+    kf_P = (Eigen::Matrix<float,6,6>::Identity() - K * H) * kf_P;
+
+    // =========================
+    // 4. WRITE BACK
+    // =========================
+    centroid3D.x = kf_x(0);
+    centroid3D.y = kf_x(1);
+    centroid3D.z = kf_x(2);
+
+    velocity.x = kf_x(3);
+    velocity.y = kf_x(4);
+    velocity.z = kf_x(5);
+
+    // =========================
+    // 5. AXES (keep smoothing)
+    // =========================
+    axes = prev.axes.clone();
+
+    for(int k = 0; k < 3; k++)
+    {
+        float prev_val = prev.axes.at<float>(k);
+        float meas_val = meas.axes.at<float>(k);
+
+        float blended = 0.3f * meas_val + 0.7f * prev_val;
+
+        float max_change = 0.2f * prev_val;
+        float diff = blended - prev_val;
+
+        if(std::abs(diff) > max_change)
+            blended = prev_val + std::copysign(max_change, diff);
+
+        axes.at<float>(k) = blended;
+    }
+
+    // =========================
+    // 6. ORIENTATION (freeze)
+    // =========================
+    orientation = prev.orientation.clone();
+
+    // =========================
+    // 7. UPDATE POSE
+    // =========================
+    UpdatePoseFromState();
+}
 }

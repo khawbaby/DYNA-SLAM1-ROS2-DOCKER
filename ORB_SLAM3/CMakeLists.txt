@@ -97,6 +97,8 @@ src/Hungarian.cc
 src/VertexObject.cc
 src/EdgeObjectMotion.cc
 src/EdgeCameraObject.cc
+src/EdgeRigidBody.cc
+src/EdgeEllipsoidRigid.cc
 include/System.h
 include/Tracking.h
 include/LocalMapping.h
@@ -133,6 +135,8 @@ include/Hungarian.h
 include/VertexObject.h
 include/EdgeObjectMotion.h
 include/EdgeCameraObject.h
+include/EdgeRigidBody.h
+include/EdgeEllipsoidRigid.h
 )
 
 add_subdirectory(Thirdparty/g2o)

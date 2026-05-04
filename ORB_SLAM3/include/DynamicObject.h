@@ -18,6 +18,12 @@ class DynamicObject {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     int id;
+    int missed_frames = 0;
+    
+    // --- Kalman state ---
+    Eigen::Matrix<float,6,1> kf_x;   // [x y z vx vy vz]
+    Eigen::Matrix<float,6,6> kf_P;   // covariance
+    bool kf_initialized = false;
 
     Eigen::Matrix3f R_eigen;
     Sophus::SE3<double> T_obj;
@@ -46,7 +52,8 @@ public:
     bool has2DObservation;
     int age;    
     bool isActive;
-
+    
+public:
     DynamicObject(int _id);
 
     void Update(const std::vector<cv::Point3f>& newPoints,
@@ -61,6 +68,20 @@ public:
         const cv::Mat &K, // camera intrinsic matrix
         const Sophus::SE3<float> &Tcw  
     );
+
+    void UpdateFromMeasurement(
+        const DynamicObject& meas,
+        const DynamicObject& prev
+    );
+
+    void UpdatePoseFromState();
+
+    void InitKalman()
+    {
+        kf_x << centroid3D.x, centroid3D.y, centroid3D.z, 0, 0, 0;
+        kf_P = Eigen::Matrix<float,6,6>::Identity() * 0.1f;
+        kf_initialized = true;
+    }
 
 };
 

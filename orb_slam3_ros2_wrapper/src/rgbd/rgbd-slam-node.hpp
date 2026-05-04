@@ -35,6 +35,8 @@ namespace ORB_SLAM3_Wrapper
     private:
         bool mask_received_ = false;
         std::condition_variable mask_cv_;
+        std::deque<double> times;
+        const int window = 30;
         typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> approximate_sync_policy;
 
         // ROS 2 Callbacks.

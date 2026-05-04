@@ -43,6 +43,8 @@
 #include "VertexObject.h"
 #include "EdgeObjectMotion.h"
 #include "EdgeCameraObject.h"
+#include "EdgeRigidBody.h"
+#include "EdgeEllipsoidRigid.h"
 
 namespace ORB_SLAM3
 {

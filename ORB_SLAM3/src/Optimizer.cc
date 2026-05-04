@@ -43,7 +43,8 @@
 #include "VertexObject.h"
 #include "EdgeObjectMotion.h"
 #include "EdgeCameraObject.h"
-
+#include "EdgeRigidBody.h"
+#include "EdgeEllipsoidRigid.h"
 namespace ORB_SLAM3
 {
 bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
@@ -1365,7 +1366,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     {
         VertexObject* vObj = new VertexObject();
 
-        vObj->setId(obj.id);
+        vObj->setId(obj.id+1000);
 
         Eigen::Vector3d t = obj.T_obj.translation();
         Eigen::Matrix3d R = obj.T_obj.rotationMatrix();
@@ -1395,7 +1396,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     std::vector<DynamicObject> CurrObjects = pFrame->mDynamicObjects;
     std::vector<DynamicObject> PrevObjects = prevFrame->mDynamicObjects;
 
-    // --- Add motion edges --- obj2obj
+    //--- Add motion edges --- obj2obj
     for(auto& curr : pFrame->mDynamicObjects)
     {
         auto it_prev = std::find_if(
@@ -1434,6 +1435,116 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
 
         optimizer.addEdge(e);
     }
+    
+    int steps = 6;  // 
+
+    for(auto& curr : pFrame->mDynamicObjects)
+    {
+        // --- Find matching object in previous frame ---
+        auto it_prev = std::find_if(
+            prevFrame->mDynamicObjects.begin(),
+            prevFrame->mDynamicObjects.end(),
+            [&](const DynamicObject& o){ return o.id == curr.id; }
+        );
+
+        if(it_prev == prevFrame->mDynamicObjects.end())
+            continue;
+
+        const DynamicObject& prev = *it_prev;
+
+        // --- Get vertices ---
+        auto itPrevV = prevObjVertices.find(prev.id);
+        auto itCurrV = currObjVertices.find(curr.id);
+
+        if(itPrevV == prevObjVertices.end() || itCurrV == currObjVertices.end())
+            continue;
+
+        VertexObject* vPrev = itPrevV->second;
+        VertexObject* vCurr = itCurrV->second;
+
+        // --- Convert axes (cv::Mat → Eigen) ---
+        Eigen::Vector3d axes_prev(
+            prev.axes.at<float>(0,0),
+            prev.axes.at<float>(1,0),
+            prev.axes.at<float>(2,0)
+        );
+
+        Eigen::Vector3d axes_curr(
+            curr.axes.at<float>(0,0),
+            curr.axes.at<float>(1,0),
+            curr.axes.at<float>(2,0)
+        );
+
+        // --- Sample parametric points ---
+        for(int i = 0; i < steps; i++)
+        {
+            float theta = CV_PI * (i + 0.5f) / steps;
+
+            for(int j = 0; j < steps; j++)
+            {
+                float phi = 2 * CV_PI * j / steps;
+
+                EdgeEllipsoidRigid* e = new EdgeEllipsoidRigid();
+
+                e->setVertex(0, vPrev);  // t-1
+                e->setVertex(1, vCurr);  // t
+
+                e->theta = theta;
+                e->phi   = phi;
+
+                e->axes_prev = axes_prev;
+                e->axes_curr = axes_prev;
+
+                e->setMeasurement(Eigen::Vector3d::Zero());
+
+                //   IMPORTANT: keep this LOW (this is a soft constraint)
+                e->setInformation(0.001 * Eigen::Matrix3d::Identity());
+                g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                e->setRobustKernel(rk);
+                rk->setDelta(sqrt(5.991));
+                optimizer.addEdge(e);
+            }
+        }
+    }
+    
+    // Rigid Body constraint: 3D point in object should move rigidly between frames
+    // for(int j=0; j<pFrame->mDynamicObjects.size(); j++) {
+    //     const auto& obj = pFrame->mDynamicObjects[j];
+    //     auto it_prev = std::find_if(
+    //     prevFrame->mDynamicObjects.begin(),
+    //     prevFrame->mDynamicObjects.end(),
+    //         [&](const DynamicObject& o){ return o.id == obj.id; }
+    //     );
+
+    //     if(it_prev == prevFrame->mDynamicObjects.end())
+    //         continue;
+
+    //     const DynamicObject& prev_obj = *it_prev;
+
+    //     if(!obj.has2DObservation || !prev_obj.has2DObservation) continue;
+    //     int N = std::min(obj.points3D_local.size(), prev_obj.points3D_local.size());
+    //     if(N < 3) continue;
+        
+    //     for(int i=0; i<N; i++) {
+    //         EdgeRigidBody* e = new EdgeRigidBody();
+
+    //         e->setVertex(0, prevObjVertices[prev_obj.id]);   // t-1
+    //         e->setVertex(1, currObjVertices[obj.id]);   // t
+
+    //         e->X_prev = prev_obj.points3D_local[i];
+    //         e->X_curr = obj.points3D_local[i];
+
+    //         e->setMeasurement(Eigen::Vector3d::Zero());
+    //         e->setInformation(
+    //             0.1 * Eigen::Matrix3d::Identity()
+    //         );
+
+    //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+    //     e->setRobustKernel(rk);
+    //     rk->setDelta(sqrt(5.991));
+    //         optimizer.addEdge(e);
+    //     }
+    // }
 
     // --- Add dynamic reprojection constraint edge --- obj -> cam
     // -------------- Centroid only --------------
@@ -1462,6 +1573,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
 
     //     optimizer.addEdge(e);
     // }
+
 
     for(auto& obj : pFrame->mDynamicObjects)
     {
