@@ -40,6 +40,7 @@
 #include "ImuTypes.h"
 #include "Settings.h"
 #include "DynamicTracker.h"
+#include "Detection.h"
 
 namespace ORB_SLAM3
 {
@@ -113,7 +114,15 @@ public:
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    Sophus::SE3f TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::Mat &dynamicMask, const double &timestamp, const vector<IMU::Point>& vImuMeas = vector<IMU::Point>(), string filename="");
+    Sophus::SE3f TrackRGBD(
+        const cv::Mat &im,
+        const cv::Mat &depthmap,
+        const cv::Mat &dynamicMask,
+        const std::vector<Detection>& detections,
+        const double &timestamp,
+        const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(),
+        string filename = ""
+    );
     Sophus::SE3f TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp, const vector<IMU::Point>& vImuMeas = vector<IMU::Point>(), string filename="");
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.

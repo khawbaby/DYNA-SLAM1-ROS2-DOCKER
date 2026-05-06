@@ -137,6 +137,7 @@ include/EdgeObjectMotion.h
 include/EdgeCameraObject.h
 include/EdgeRigidBody.h
 include/EdgeEllipsoidRigid.h
+include/Detection.h
 )
 
 add_subdirectory(Thirdparty/g2o)

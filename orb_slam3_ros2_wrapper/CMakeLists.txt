@@ -44,6 +44,7 @@ find_package(PCL REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(vision_msgs REQUIRED)
 
 option(ORB_SLAM3_ROS2_WRAPPER_ENABLE_CUDA "Enable CUDA support if available" OFF)
 
@@ -83,6 +84,7 @@ set(dependencies
   PCL 
   nav_msgs 
   std_srvs
+  vision_msgs
 )
 
 add_library(orb_slam3_ros2_wrapper_common SHARED

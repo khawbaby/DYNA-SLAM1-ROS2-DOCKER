@@ -32,6 +32,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
+#include "Detection.h"
 
 namespace ORB_SLAM3
 {
@@ -340,7 +341,14 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
     return Tcw;
 }
 
-Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const cv::Mat &dynamicMask, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+Sophus::SE3f System::TrackRGBD(
+    const cv::Mat &im,
+    const cv::Mat &depthmap,
+    const cv::Mat &dynamicMask,
+    const std::vector<Detection>& detections,
+    const double &timestamp,
+    const std::vector<IMU::Point>& vImuMeas,
+    string filename) 
 {
     if(mSensor!=RGBD  && mSensor!=IMU_RGBD)
     {

@@ -19,7 +19,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-
+#include <vision_msgs/msg/detection2_d_array.hpp>
 #include "orb_slam3_ros2_wrapper/slam_node_base.hpp"
 
 namespace ORB_SLAM3_Wrapper
@@ -34,6 +34,7 @@ namespace ORB_SLAM3_Wrapper
 
     private:
         bool mask_received_ = false;
+        bool detections_received_ = false;
         std::condition_variable mask_cv_;
         std::deque<double> times;
         const int window = 30;
@@ -44,6 +45,8 @@ namespace ORB_SLAM3_Wrapper
                           const sensor_msgs::msg::Image::SharedPtr msgD);
         
         void MaskCallback(const sensor_msgs::msg::Image::SharedPtr msgMask);
+        
+        void DetectionsCallback(const vision_msgs::msg::Detection2DArray::SharedPtr msg);
         /**
          * Member variables
          */
@@ -51,12 +54,15 @@ namespace ORB_SLAM3_Wrapper
         std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> rgbSub_;
         std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> depthSub_;
         std::shared_ptr<message_filters::Synchronizer<approximate_sync_policy>> syncApproximate_;
-
-
+        
+        rclcpp::Subscription<vision_msgs::msg::Detection2DArray>::SharedPtr detectionsSub_;
         rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr maskSub_;
 
         std::mutex mask_mutex_;
+        std::mutex detections_mutex_;
+        
         cv::Mat latest_mask_;
+        vision_msgs::msg::Detection2DArray latest_detections_;
     };
 }
 #endif
