@@ -19,8 +19,8 @@ namespace ORB_SLAM3_Wrapper
         : SlamNodeBase("ORB_SLAM3_RGBD_ROS2", strVocFile, strSettingsFile, sensor)
     {
         // Declare parameters (topic names)
-        this->declare_parameter("rgb_image_topic_name", rclcpp::ParameterValue("camera/image_raw"));
-        this->declare_parameter("depth_image_topic_name", rclcpp::ParameterValue("depth/image_raw"));
+        this->declare_parameter("rgb_image_topic_name", rclcpp::ParameterValue("/camera/camera/color/image_raw"));
+        this->declare_parameter("depth_image_topic_name", rclcpp::ParameterValue("/camera/camera/depth/image_rect_raw"));
         this->declare_parameter("dynamic_mask_topic_name", rclcpp::ParameterValue("yolo/dynamic_mask"));
         this->declare_parameter("detections_topic_name", rclcpp::ParameterValue("yolo/detections"));
 
@@ -220,9 +220,9 @@ namespace ORB_SLAM3_Wrapper
 
             double fps = 1000.0 / avg;
 
-            std::cout << "FPS (smoothed): "
-                    << fps
-                    << std::endl;
+            // std::cout << "FPS (smoothed): "
+            //         << fps
+            //         << std::endl;
         }
 
         // =========================================

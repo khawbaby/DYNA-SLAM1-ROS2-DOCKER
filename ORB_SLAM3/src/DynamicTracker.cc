@@ -3,6 +3,7 @@
 #include <iomanip>
 #include "DynamicTracker.h"
 #include "DynamicObject.h"
+#include "Detection.h"
 #include "Frame.h"
 #include "Hungarian.h"
 #include <utility>
@@ -14,6 +15,30 @@ namespace ORB_SLAM3
 using GridType = std::vector<std::size_t>[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
 DynamicTracker::DynamicTracker() : next_id(0) {}
+
+float DynamicTracker::ComputeIoU(const cv::Rect& a, const cv::Rect& b)
+{
+    int x1 = std::max(a.x, b.x);
+    int y1 = std::max(a.y, b.y);
+
+    int x2 = std::min(a.x + a.width,
+                      b.x + b.width);
+
+    int y2 = std::min(a.y + a.height,
+                      b.y + b.height);
+
+    int interArea =
+        std::max(0, x2 - x1) *
+        std::max(0, y2 - y1);
+
+    int unionArea =
+        a.area() + b.area() - interArea;
+
+    if(unionArea <= 0)
+        return 0.0f;
+
+    return static_cast<float>(interArea) / unionArea;
+}
 
 float DynamicTracker::computeSigma(const std::vector<float>& data)
 {
@@ -72,15 +97,67 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
         obj.Update(objCurr, objCurr2D);
         obj.ComputeCentroid();
         obj.FitEllipsoid();
+
+        float minx = 1e9, miny = 1e9;
+        float maxx = -1e9, maxy = -1e9;
+        int dynamic_pixels = 0;
+        for(const auto& kp : objCurr2D)
+        {
+            int x = (int)kp.pt.x;
+            int y = (int)kp.pt.y;
+
+            if(mCurrentFrame.mDynamicMask.at<uchar>(y,x) == 0)
+                dynamic_pixels++;
+
+            minx = std::min(minx, kp.pt.x);
+            miny = std::min(miny, kp.pt.y);
+            maxx = std::max(maxx, kp.pt.x);
+            maxy = std::max(maxy, kp.pt.y);
+        }
+
+        float ratio = (float)dynamic_pixels / objCurr2D.size();
+
+        if(ratio < 0.3f)
+            continue;   
+
+        cv::Rect clusterBox(
+            cv::Point2f(minx, miny),
+            cv::Point2f(maxx, maxy)
+        );
+
+        // associate cluster ↔ YOLO detection
+        float bestIoU = 0.0f;
+        Detection bestDet;
+
+        for(const auto& det : mCurrentFrame.mDetections)
+        {
+            float iou = ComputeIoU(clusterBox, det.bbox);
+
+            if(iou > bestIoU)
+            {
+                bestIoU = iou;
+                bestDet = det;
+            }
+        }
+
+        if(bestIoU > 0.2f)
+        {
+            obj.bbox = bestDet.bbox;
+        }
+        else
+        {
+            obj.bbox = clusterBox;
+        }
         // obj.DrawEllipsoid2D(frame, mCurrentFrame.mK, mCurrentFrame.GetPose());
         CurrentObjects.push_back(obj);
     }
-    
+
+
     mCurrentFrame.mDynamicObjects = CurrentObjects;
     PrevObjects = mLastFrame.mDynamicObjects;
 
-    std::cout << "Prev Objects: " << PrevObjects.size() << std::endl;
-    std::cout << "Current Objects: " << CurrentObjects.size() << std::endl;
+    // std::cout << "Prev Objects: " << PrevObjects.size() << std::endl;
+    // std::cout << "Current Objects: " << CurrentObjects.size() << std::endl;
     // std::cout << "Ret Objects Created : " << clusters.size() << std::endl;
     // std::cout << "Curr Objects Created : " << CurrentObjects.size() << std::endl;
     // std::cout << "Prev Objects Created : " << mLastFrame.mDynamicObjects.size() << "\n" << std::endl;
@@ -90,7 +167,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     std::vector<float> dist_vect, motion_vect, size_vect;
     for(int i = 0; i < PrevObjects.size(); i++)
     {
-        std::cout << "Velocity: " << PrevObjects[i].velocity << std::endl;
+        // std::cout << "Velocity: " << PrevObjects[i].velocity << std::endl;
         for(int j = 0; j < CurrentObjects.size(); j++)
         {
             float dist = cv::norm(CurrentObjects[j].centroid3D - PrevObjects[i].centroid3D);
@@ -128,10 +205,10 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
             sigma_m = std::max(sigma_m, 1e-3f);
             sigma_s = std::max(sigma_s, 1e-3f);
 
-            std::cout
-                << " sigma_d: " << sigma_d << std::setw(25)
-                << " sigma_m: " << sigma_m << std::setw(25)
-                << " sigma_s: " << sigma_s << std::endl;
+            // std::cout
+            //     << " sigma_d: " << sigma_d << std::setw(25)
+            //     << " sigma_m: " << sigma_m << std::setw(25)
+            //     << " sigma_s: " << sigma_s << std::endl;
 
             int N = PrevObjects.size();
             int M = CurrentObjects.size();
@@ -152,17 +229,24 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
                         cv::Point3f predicted = PrevObjects[i].centroid3D + PrevObjects[i].velocity;
                         motion = cv::norm(CurrentObjects[j].centroid3D - predicted);
                     } 
+                    
+                    float iou = ComputeIoU(
+                        PrevObjects[i].bbox,
+                        CurrentObjects[j].bbox
+                    );
+
+                    float iou_score = 1.0f - iou;
 
                     float d_score = (dist*dist)/(sigma_d*sigma_d);
                     float s_score = (sizeDiff*sizeDiff)/(sigma_s*sigma_s);
                     m_score = (motion*motion)/(sigma_m*sigma_m);
 
-                    float totalScore = d_score + m_score + s_score;
-                    std::cout
-                        << " d_score: " << d_score << std::setw(25)
-                        << " m_score: " << m_score << std::setw(25)
-                        << " s_score: " << s_score << std::endl;
-
+                    float totalScore =
+                        1.0f * d_score +
+                        0.5f * m_score +
+                        0.2f * s_score +
+                        2.0f * iou_score;
+               
                     // Gating
                     if(totalScore < 50.0f)
                         costMatrix[i][j] = totalScore;
@@ -174,9 +258,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
             // [B1, B2, B3] -> Curr Obj
             
             std::vector<int> assignment = hungarian_solver.solve(costMatrix);
-            std::cout << "Assignments: " << assignment.size() << std::endl;
             std::vector<bool> used(CurrentObjects.size(), false);
-            std::cout << std::endl;
 
             std::vector<DynamicObject> alignedObjects; 
             int it=0;
@@ -188,7 +270,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
                 
                 if(j == -1) 
                 {
-                    std::cout << "Tracking lost\n";
+                    // std::cout << "Tracking lost\n";
                     continue;
                 }
 
@@ -321,7 +403,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
 
     for(int j = 0; j < mCurrentFrame.mDynamicObjects.size(); j++)
     {
-        std::cout << mCurrentFrame.mDynamicObjects[j].id << "\t";
+        // std::cout << mCurrentFrame.mDynamicObjects[j].id << "\t";
         mCurrentFrame.mDynamicObjects[j].DrawEllipsoid2D(frame, mCurrentFrame.mK, mCurrentFrame.GetPose());
     }
 
@@ -329,10 +411,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
         cv::imshow("Ellipsoids", frame);
         cv::waitKey(1);
     }
-    
-    std::cout << "\nNext ID: " << next_id << std::endl;
-    //mCurrentFrame.mDynamicObjects = alignedObjects;
-    std::cout << std::endl;
+
 }
 
 

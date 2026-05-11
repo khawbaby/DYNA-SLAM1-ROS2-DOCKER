@@ -35,6 +35,8 @@ public:
     std::vector<cv::Point3f> ellipsoidPoints;
     std::vector<cv::Point3f> ellipsoidPointsLocal;
 
+    cv::Rect bbox;
+
     cv::Mat R;  // rotation
     cv::Mat axes;        // 3x1
     cv::Mat orientation; // 3x3
@@ -55,6 +57,8 @@ public:
     
 public:
     DynamicObject(int _id);
+
+    float ComputeIoU(const cv::Rect& a, const cv::Rect& b);
 
     void Update(const std::vector<cv::Point3f>& newPoints,
                 const std::vector<cv::Point3f>& prevPoints);
@@ -83,6 +87,7 @@ public:
         kf_initialized = true;
     }
 
+    
 };
 
 }

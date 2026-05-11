@@ -1,4 +1,8 @@
 datasets
+.config
+.cache
+.local
+.vscode
 *.bag
 *.db3
 build

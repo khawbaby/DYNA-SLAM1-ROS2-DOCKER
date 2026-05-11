@@ -21,6 +21,30 @@ DynamicObject::DynamicObject(int _id): id(_id), age(1), isActive(true)
     //t = cv::Mat::zeros(3,1,CV_32F);
 }
 
+float DynamicObject::ComputeIoU(const cv::Rect& a, const cv::Rect& b)
+{
+    int x1 = std::max(a.x, b.x);
+    int y1 = std::max(a.y, b.y);
+
+    int x2 = std::min(a.x + a.width,
+                      b.x + b.width);
+
+    int y2 = std::min(a.y + a.height,
+                      b.y + b.height);
+
+    int interArea =
+        std::max(0, x2 - x1) *
+        std::max(0, y2 - y1);
+
+    int unionArea =
+        a.area() + b.area() - interArea;
+
+    if(unionArea <= 0)
+        return 0.0f;
+
+    return static_cast<float>(interArea) / unionArea;
+}
+
 void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints,
                            const std::vector<cv::Point3f>& prevPoints)
 {
@@ -378,4 +402,6 @@ void DynamicObject::UpdateFromMeasurement(
     // =========================
     UpdatePoseFromState();
 }
+
+
 }

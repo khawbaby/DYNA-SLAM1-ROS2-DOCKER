@@ -31,6 +31,7 @@
 #include "KannalaBrandt8.h"
 #include "MLPnPsolver.h"
 #include "GeometricTools.h"
+#include "Detection.h"
 #include <chrono>
 #include <deque>
 #include <iostream>
@@ -1654,12 +1655,12 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 //         //dynamicMask = dynamicMask.clone();
 //     }
 
-    cv::Mat dynamicMask = cv::Mat::ones(mImGray.size(), CV_8U);
-    dynamicMask.colRange(0, dynamicMask.cols/2).setTo(0);
+    // cv::Mat dynamicMask = cv::Mat::ones(mImGray.size(), CV_8U);
+    // dynamicMask.colRange(0, dynamicMask.cols/2).setTo(0);
     if (mSensor == System::RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
+        mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
     else if(mSensor == System::IMU_RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
+        mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
 
 
    
@@ -1678,7 +1679,7 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     return mCurrentFrame.GetPose();
 }
 
-Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const cv::Mat &imMask,const double &timestamp, string filename)
+Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const cv::Mat &imMask,const std::vector<Detection>& detections, const double &timestamp, string filename)
 {
     mImGray = imRGB;
     cv::Mat imDepth = imD;
@@ -1704,9 +1705,9 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     cv::Mat dynamicMask = imMask;
     // dynamicMask.colRange(0, dynamicMask.cols/2).setTo(0);
     if (mSensor == System::RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
+        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask, detections, timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
     else if(mSensor == System::IMU_RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
+        mCurrentFrame = Frame(mImGray,imDepth,dynamicMask, detections, timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
 
 
 

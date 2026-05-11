@@ -31,7 +31,7 @@ class YoloNode(Node):
         # Subscriber (camera images)
         self.subscription = self.create_subscription(
             Image,
-            '/camera/image_raw',
+            '/camera/camera/color/image_raw',
             self.image_callback,
             10
         )

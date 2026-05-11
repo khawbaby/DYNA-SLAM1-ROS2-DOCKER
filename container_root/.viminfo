@@ -14,12 +14,12 @@
 ~MSle0~/colcon
 
 # Command Line History (newest to oldest):
+:q!
+|2,0,1778080608,,"q!"
 :x
 |2,0,1709635249,,"x"
 :q
 |2,0,1709634977,,"q"
-:q!
-|2,0,1709610397,,"q!"
 :q!\
 |2,0,1709610394,,"q!\\"
 :w
@@ -49,36 +49,128 @@
 |3,1,36,0,1,0,1708855923,"s"
 
 # File marks:
-'0  17  50  ~/shell_scripts/multi_orb.sh
-|4,48,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
-'1  7  33  ~/shell_scripts/multi_orb.sh
-|4,49,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
-'2  7  33  ~/shell_scripts/multi_orb.sh
-|4,50,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
-'3  17  48  ~/shell_scripts/multi_orb.sh
-|4,51,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
-'4  17  48  ~/shell_scripts/multi_orb.sh
-|4,52,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
-'5  17  48  ~/shell_scripts/multi_orb.sh
-|4,53,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
-'6  6  10  ~/shell_scripts/multi_orb.sh
-|4,54,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
-'7  6  10  ~/shell_scripts/multi_orb.sh
-|4,55,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
-'8  6  10  ~/shell_scripts/multi_orb.sh
-|4,56,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
-'9  6  10  ~/shell_scripts/multi_orb.sh
-|4,57,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
+'0  1  0  ~/.ros/cyclonedds.xml
+|4,48,1,0,1778080608,"~/.ros/cyclonedds.xml"
+'1  39  22  ~/.bashrc
+|4,49,39,22,1778080336,"~/.bashrc"
+'2  1  24  ~/.bashrc
+|4,50,1,24,1778078764,"~/.bashrc"
+'3  1  24  ~/.bashrc
+|4,51,1,24,1778078764,"~/.bashrc"
+'4  17  50  ~/shell_scripts/multi_orb.sh
+|4,52,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
+'5  7  33  ~/shell_scripts/multi_orb.sh
+|4,53,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+'6  7  33  ~/shell_scripts/multi_orb.sh
+|4,54,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+'7  17  48  ~/shell_scripts/multi_orb.sh
+|4,55,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+'8  17  48  ~/shell_scripts/multi_orb.sh
+|4,56,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+'9  17  48  ~/shell_scripts/multi_orb.sh
+|4,57,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
 
 # Jumplist (newest first):
+-'  1  0  ~/.ros/cyclonedds.xml
+|4,39,1,0,1778080608,"~/.ros/cyclonedds.xml"
+-'  39  22  ~/.bashrc
+|4,39,39,22,1778080336,"~/.bashrc"
+-'  39  22  ~/.bashrc
+|4,39,39,22,1778080336,"~/.bashrc"
+-'  1  24  ~/.bashrc
+|4,39,1,24,1778080292,"~/.bashrc"
+-'  1  24  ~/.bashrc
+|4,39,1,24,1778080292,"~/.bashrc"
+-'  1  24  ~/.bashrc
+|4,39,1,24,1778078764,"~/.bashrc"
+-'  1  24  ~/.bashrc
+|4,39,1,24,1778078764,"~/.bashrc"
+-'  103  24  ~/.bashrc
+|4,39,103,24,1778078552,"~/.bashrc"
+-'  103  24  ~/.bashrc
+|4,39,103,24,1778078552,"~/.bashrc"
+-'  103  24  ~/.bashrc
+|4,39,103,24,1778078552,"~/.bashrc"
+-'  103  24  ~/.bashrc
+|4,39,103,24,1778078552,"~/.bashrc"
+-'  17  50  ~/shell_scripts/multi_orb.sh
+|4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
+-'  17  50  ~/shell_scripts/multi_orb.sh
+|4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
+-'  17  50  ~/shell_scripts/multi_orb.sh
+|4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
+-'  17  50  ~/shell_scripts/multi_orb.sh
+|4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
+-'  17  50  ~/shell_scripts/multi_orb.sh
+|4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
+-'  17  50  ~/shell_scripts/multi_orb.sh
+|4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
+-'  17  50  ~/shell_scripts/multi_orb.sh
+|4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
 -'  17  50  ~/shell_scripts/multi_orb.sh
 |4,39,17,50,1709635249,"~/shell_scripts/multi_orb.sh"
 -'  7  33  ~/shell_scripts/multi_orb.sh
 |4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
 -'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635236,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
+|4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
+-'  7  33  ~/shell_scripts/multi_orb.sh
 |4,39,7,33,1709635211,"~/shell_scripts/multi_orb.sh"
 -'  17  48  ~/shell_scripts/multi_orb.sh
 |4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635184,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
+-'  17  48  ~/shell_scripts/multi_orb.sh
+|4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
 -'  17  48  ~/shell_scripts/multi_orb.sh
 |4,39,17,48,1709635034,"~/shell_scripts/multi_orb.sh"
 -'  6  10  ~/shell_scripts/multi_orb.sh
@@ -87,6 +179,62 @@
 |4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
 -'  6  10  ~/shell_scripts/multi_orb.sh
 |4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709635026,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
+-'  6  10  ~/shell_scripts/multi_orb.sh
+|4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
 -'  6  10  ~/shell_scripts/multi_orb.sh
 |4,39,6,10,1709634994,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
@@ -97,182 +245,53 @@
 |4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
 |4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  1  0  ~/colcon_ws2/shell_scripts/multi_orb.sh
-|4,39,1,0,1709634977,"~/colcon_ws2/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709634916,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709634916,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709634916,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709632083,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709632083,"~/shell_scripts/multi_orb.sh"
--'  6  18  ~/shell_scripts/multi_orb.sh
-|4,39,6,18,1709632066,"~/shell_scripts/multi_orb.sh"
--'  6  18  ~/shell_scripts/multi_orb.sh
-|4,39,6,18,1709632066,"~/shell_scripts/multi_orb.sh"
--'  6  18  ~/shell_scripts/multi_orb.sh
-|4,39,6,18,1709632066,"~/shell_scripts/multi_orb.sh"
--'  6  18  ~/shell_scripts/multi_orb.sh
-|4,39,6,18,1709632066,"~/shell_scripts/multi_orb.sh"
--'  7  18  ~/shell_scripts/multi_orb.sh
-|4,39,7,18,1709628429,"~/shell_scripts/multi_orb.sh"
--'  7  18  ~/shell_scripts/multi_orb.sh
-|4,39,7,18,1709628429,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  6  10  ~/shell_scripts/multi_orb.sh
-|4,39,6,10,1709628419,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  5  77  ~/shell_scripts/multi_orb.sh
-|4,39,5,77,1709628419,"~/shell_scripts/multi_orb.sh"
--'  6  10  ~/shell_scripts/multi_orb.sh
-|4,39,6,10,1709628419,"~/shell_scripts/multi_orb.sh"
--'  6  10  ~/shell_scripts/multi_orb.sh
-|4,39,6,10,1709628393,"~/shell_scripts/multi_orb.sh"
--'  6  10  ~/shell_scripts/multi_orb.sh
-|4,39,6,10,1709628393,"~/shell_scripts/multi_orb.sh"
--'  6  10  ~/shell_scripts/multi_orb.sh
-|4,39,6,10,1709628349,"~/shell_scripts/multi_orb.sh"
--'  6  10  ~/shell_scripts/multi_orb.sh
-|4,39,6,10,1709628349,"~/shell_scripts/multi_orb.sh"
--'  9  0  ~/shell_scripts/multi_orb.sh
-|4,39,9,0,1709628244,"~/shell_scripts/multi_orb.sh"
--'  9  0  ~/shell_scripts/multi_orb.sh
-|4,39,9,0,1709628244,"~/shell_scripts/multi_orb.sh"
--'  9  0  ~/shell_scripts/multi_orb.sh
-|4,39,9,0,1709628244,"~/shell_scripts/multi_orb.sh"
--'  9  0  ~/shell_scripts/multi_orb.sh
-|4,39,9,0,1709628244,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
-|4,39,8,0,1709628244,"~/shell_scripts/multi_orb.sh"
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
-|4,39,8,0,1709628244,"~/shell_scripts/multi_orb.sh"
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
-|4,39,8,0,1709628244,"~/shell_scripts/multi_orb.sh"
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
-|4,39,8,0,1709628244,"~/shell_scripts/multi_orb.sh"
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
-|4,39,8,0,1709628244,"~/shell_scripts/multi_orb.sh"
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
 -'  8  0  ~/shell_scripts/multi_orb.sh
-|4,39,8,0,1709628244,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709613273,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709613273,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709613273,"~/shell_scripts/multi_orb.sh"
--'  7  0  ~/shell_scripts/multi_orb.sh
-|4,39,7,0,1709613273,"~/shell_scripts/multi_orb.sh"
--'  16  0  ~/shell_scripts/multi_orb.sh
-|4,39,16,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  15  0  ~/shell_scripts/multi_orb.sh
-|4,39,15,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  18  0  ~/shell_scripts/multi_orb.sh
-|4,39,18,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  19  0  ~/shell_scripts/multi_orb.sh
-|4,39,19,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  14  0  ~/shell_scripts/multi_orb.sh
-|4,39,14,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  16  0  ~/shell_scripts/multi_orb.sh
-|4,39,16,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  15  0  ~/shell_scripts/multi_orb.sh
-|4,39,15,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  18  0  ~/shell_scripts/multi_orb.sh
-|4,39,18,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  19  0  ~/shell_scripts/multi_orb.sh
-|4,39,19,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  14  0  ~/shell_scripts/multi_orb.sh
-|4,39,14,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  16  0  ~/shell_scripts/multi_orb.sh
-|4,39,16,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  15  0  ~/shell_scripts/multi_orb.sh
-|4,39,15,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  18  0  ~/shell_scripts/multi_orb.sh
-|4,39,18,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  19  0  ~/shell_scripts/multi_orb.sh
-|4,39,19,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  14  0  ~/shell_scripts/multi_orb.sh
-|4,39,14,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  16  0  ~/shell_scripts/multi_orb.sh
-|4,39,16,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  15  0  ~/shell_scripts/multi_orb.sh
-|4,39,15,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  17  0  ~/shell_scripts/multi_orb.sh
-|4,39,17,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  18  0  ~/shell_scripts/multi_orb.sh
-|4,39,18,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  19  0  ~/shell_scripts/multi_orb.sh
-|4,39,19,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  15  0  ~/shell_scripts/multi_orb.sh
-|4,39,15,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  14  0  ~/shell_scripts/multi_orb.sh
-|4,39,14,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  16  0  ~/shell_scripts/multi_orb.sh
-|4,39,16,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  17  0  ~/shell_scripts/multi_orb.sh
-|4,39,17,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  16  0  ~/shell_scripts/multi_orb.sh
-|4,39,16,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  18  0  ~/shell_scripts/multi_orb.sh
-|4,39,18,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  17  0  ~/shell_scripts/multi_orb.sh
-|4,39,17,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  16  0  ~/shell_scripts/multi_orb.sh
-|4,39,16,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  18  0  ~/shell_scripts/multi_orb.sh
-|4,39,18,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  17  0  ~/shell_scripts/multi_orb.sh
-|4,39,17,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  18  0  ~/shell_scripts/multi_orb.sh
-|4,39,18,0,1709613262,"~/shell_scripts/multi_orb.sh"
--'  17  0  ~/shell_scripts/multi_orb.sh
-|4,39,17,0,1709613262,"~/shell_scripts/multi_orb.sh"
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
+-'  8  0  ~/shell_scripts/multi_orb.sh
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
+-'  8  0  ~/shell_scripts/multi_orb.sh
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
+-'  8  0  ~/shell_scripts/multi_orb.sh
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
+-'  8  0  ~/shell_scripts/multi_orb.sh
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
+-'  8  0  ~/shell_scripts/multi_orb.sh
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
+-'  8  0  ~/shell_scripts/multi_orb.sh
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
+-'  8  0  ~/shell_scripts/multi_orb.sh
+|4,39,8,0,1709634980,"~/shell_scripts/multi_orb.sh"
 
 # History of marks within files (newest to oldest):
+
+> ~/.ros/cyclonedds.xml
+	*	1778080604	0
+	"	1	0
+
+> ~/.bashrc
+	*	1778080311	0
+	"	39	22
+	^	108	34
+	.	103	33
+	+	104	33
+	+	106	21
+	+	105	21
+	+	104	33
+	+	106	21
+	+	111	18
+	+	112	17
+	+	102	31
+	+	103	33
 
 > ~/shell_scripts/multi_orb.sh
 	*	1709635248	0
@@ -296,21 +315,6 @@
 > ~/colcon_ws2/shell_scripts/multi_orb.sh
 	*	1709634974	0
 	"	1	0
-
-> ~/.bashrc
-	*	1709580454	0
-	"	103	24
-	^	108	34
-	.	103	33
-	+	104	33
-	+	106	21
-	+	105	21
-	+	104	33
-	+	106	21
-	+	111	18
-	+	112	17
-	+	102	31
-	+	103	33
 
 > ~/colcon_ws/src/orb_slam3_ros2_wrapper/params/scout_v2_rgbd.yaml
 	*	1709488173	0

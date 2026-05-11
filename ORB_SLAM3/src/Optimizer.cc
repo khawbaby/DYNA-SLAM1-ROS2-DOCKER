@@ -1436,15 +1436,20 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         optimizer.addEdge(e);
     }
     
-    int steps = 6;  // 
+    int steps = 4;   // weak temporal smoothness only
 
     for(auto& curr : pFrame->mDynamicObjects)
     {
-        // --- Find matching object in previous frame ---
+        // =========================================
+        // Find matching object in previous frame
+        // =========================================
         auto it_prev = std::find_if(
             prevFrame->mDynamicObjects.begin(),
             prevFrame->mDynamicObjects.end(),
-            [&](const DynamicObject& o){ return o.id == curr.id; }
+            [&](const DynamicObject& o)
+            {
+                return o.id == curr.id;
+            }
         );
 
         if(it_prev == prevFrame->mDynamicObjects.end())
@@ -1452,56 +1457,110 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
 
         const DynamicObject& prev = *it_prev;
 
-        // --- Get vertices ---
+        // =========================================
+        // Reject unstable associations
+        // =========================================
+        float motion_dist =
+            cv::norm(curr.centroid3D - prev.centroid3D);
+
+        // Skip if association too far away
+        if(motion_dist > 2.0f)
+            continue;
+
+        // =========================================
+        // Get graph vertices
+        // =========================================
         auto itPrevV = prevObjVertices.find(prev.id);
         auto itCurrV = currObjVertices.find(curr.id);
 
-        if(itPrevV == prevObjVertices.end() || itCurrV == currObjVertices.end())
+        if(itPrevV == prevObjVertices.end() ||
+        itCurrV == currObjVertices.end())
             continue;
 
         VertexObject* vPrev = itPrevV->second;
         VertexObject* vCurr = itCurrV->second;
 
-        // --- Convert axes (cv::Mat → Eigen) ---
-        Eigen::Vector3d axes_prev(
+        // =========================================
+        // Skip weak/noisy objects
+        // =========================================
+        if(curr.points3D.size() < 10)
+            continue;
+
+        // =========================================
+        // Use PREVIOUS axes only
+        // (shape stabilization)
+        // =========================================
+        Eigen::Vector3d axes(
             prev.axes.at<float>(0,0),
             prev.axes.at<float>(1,0),
             prev.axes.at<float>(2,0)
         );
 
-        Eigen::Vector3d axes_curr(
-            curr.axes.at<float>(0,0),
-            curr.axes.at<float>(1,0),
-            curr.axes.at<float>(2,0)
-        );
-
-        // --- Sample parametric points ---
+        // =========================================
+        // Sample sparse ellipsoid points
+        // =========================================
         for(int i = 0; i < steps; i++)
         {
-            float theta = CV_PI * (i + 0.5f) / steps;
+            // Better sampling distribution
+            float theta =
+                CV_PI * (i + 0.5f) / steps;
 
             for(int j = 0; j < steps; j++)
             {
-                float phi = 2 * CV_PI * j / steps;
+                float phi =
+                    2.0f * CV_PI * j / steps;
 
-                EdgeEllipsoidRigid* e = new EdgeEllipsoidRigid();
+                EdgeEllipsoidRigid* e =
+                    new EdgeEllipsoidRigid();
 
-                e->setVertex(0, vPrev);  // t-1
-                e->setVertex(1, vCurr);  // t
+                // =================================
+                // Graph vertices
+                // =================================
+                e->setVertex(0, vPrev);
+                e->setVertex(1, vCurr);
 
+                // =================================
+                // Sample location
+                // =================================
                 e->theta = theta;
                 e->phi   = phi;
 
-                e->axes_prev = axes_prev;
-                e->axes_curr = axes_prev;
+                // =================================
+                // Fixed shape across time
+                // =================================
+                e->axes_prev = axes;
+                e->axes_curr = axes;
 
-                e->setMeasurement(Eigen::Vector3d::Zero());
+                // =================================
+                // Zero residual target
+                // =================================
+                e->setMeasurement(
+                    Eigen::Vector3d::Zero()
+                );
 
-                //   IMPORTANT: keep this LOW (this is a soft constraint)
-                e->setInformation(0.001 * Eigen::Matrix3d::Identity());
-                g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                // =================================
+                // VERY WEAK soft constraint
+                // Humans are non-rigid
+                // =================================
+                e->setInformation(
+                    0.0001 *
+                    Eigen::Matrix3d::Identity()
+                );
+
+                // =================================
+                // Robust kernel
+                // =================================
+                auto* rk =
+                    new g2o::RobustKernelHuber;
+
                 e->setRobustKernel(rk);
-                rk->setDelta(sqrt(5.991));
+
+                // Better for noisy human motion
+                rk->setDelta(2.0);
+
+                // =================================
+                // Add edge
+                // =================================
                 optimizer.addEdge(e);
             }
         }

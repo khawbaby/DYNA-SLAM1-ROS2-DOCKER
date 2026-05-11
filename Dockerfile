@@ -41,17 +41,41 @@ RUN apt-get install -y \
     tmux
 
 # ROS packages
+# Install ROS + dependencies
 RUN apt-get update && apt-get install -y \
     ros-humble-pcl-ros \
     ros-humble-nav2-common \
+    ros-humble-navigation2 \
+    ros-humble-nav2-bringup \
+    ros-humble-gazebo-ros-pkgs \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
     ros-humble-rmw-cyclonedds-cpp \
     ros-humble-cv-bridge \
     ros-humble-image-transport \
     ros-humble-image-common \
     ros-humble-vision-opencv \
+    ros-humble-realsense2-camera \
+    ros-humble-realsense2-description \
+    ros-humble-slam-toolbox \
+    ros-humble-robot-localization \
+    ros-humble-tf2-ros \
+    ros-humble-tf2-tools \
+    ros-humble-tf-transformations \
+    ros-humble-rviz2 \
+    ros-humble-robot-state-publisher \
+    ros-humble-joint-state-publisher \
+    ros-humble-xacro \
+    ros-humble-image-transport-plugins \
+    python3-colcon-common-extensions \
+    usbutils \
+    udev \
+    libgtk-3-0 \
+    libglew2.2 \
+    libgl1-mesa-glx \
     x11-apps \
     gdb \
-    gdbserver
+    gdbserver 
 
 # ------------------------------------------------------------------------------
 # OpenCV build dependencies

@@ -6,6 +6,7 @@
 #include <iomanip>
 #include "Frame.h"
 #include "Hungarian.h"
+#include "Detection.h"
 #include <utility>
 #include <unordered_map>
 #include <limits>
@@ -83,6 +84,8 @@ private:
 
 
     float Distance(const cv::Point3f& a, const cv::Point3f& b);
+
+    float ComputeIoU(const cv::Rect& a, const cv::Rect& b);
 };
 
 // std::vector<std::size_t> mDynamicGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];

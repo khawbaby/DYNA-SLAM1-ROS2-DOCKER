@@ -14,33 +14,33 @@ x-dyna-slam1-common: &dyna-slam1_common
     # entrypoint: ["/bin/bash"]
 
 services:
-  dyna-slam1_22_humble:
-    <<: *dyna-slam1_common
-    network_mode: host
-    image: khawtx/dynaslam1:humble-22.04
-    volumes:
-      #full dev
-      - /dev:/dev:rw
-      #full media
-      - /media:/media:rw
-      #Time
-      - /etc/timezone:/etc/timezone:rw
-      - /etc/localtime:/etc/localtime:rw
-      #ros-workspaces
-      - ./container_root/:/root/
-      - ./ros_env_vars.sh:/root/ros_env_vars.sh
-      - ./yolo_ros2/run_yolo.sh:/root/colcon_ws/run_yolo.sh
-      - ./orb_slam3_ros2_wrapper/:/root/colcon_ws/src/orb_slam3_ros2_wrapper/
-      - ./orb_slam3_map_generator/:/root/colcon_ws/src/orb_slam3_map_generator/
-      - ./slam_msgs/:/root/colcon_ws/src/slam_msgs/
-      - ./ORB_SLAM3/:/home/orb/ORB_SLAM3/
+#   dyna-slam1_22_humble:
+#     <<: *dyna-slam1_common
+#     network_mode: host
+#     image: khawtx/dynaslam1:humble-22.04
+#     volumes:
+#       #full dev
+#       - /dev:/dev:rw
+#       #full media
+#       - /media:/media:rw
+#       #Time
+#       - /etc/timezone:/etc/timezone:rw
+#       - /etc/localtime:/etc/localtime:rw
+#       #ros-workspaces
+#       - ./container_root/:/root/
+#       - ./ros_env_vars.sh:/root/ros_env_vars.sh
+#       - ./yolo_ros2/run_yolo.sh:/root/colcon_ws/run_yolo.sh
+#       - ./orb_slam3_ros2_wrapper/:/root/colcon_ws/src/orb_slam3_ros2_wrapper/
+#       - ./orb_slam3_map_generator/:/root/colcon_ws/src/orb_slam3_map_generator/
+#       - ./slam_msgs/:/root/colcon_ws/src/slam_msgs/
+#       - ./ORB_SLAM3/:/home/orb/ORB_SLAM3/
       
-      #datasets
-      - /home/ros2-x13/datasets:/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets
-      - /dev/shm:/dev/shm
-      - ./ORB_SLAM3/bags:/home/orb/ORB_SLAM3/bags
-      - ./ORB_SLAM3/maps:/home/orb/ORB_SLAM3/maps
-      - ./ORB_SLAM3/logs:/home/orb/ORB_SLAM3/logs
+#       #datasets
+#       - /home/ros2-x13/datasets:/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets
+#       - /dev/shm:/dev/shm
+#       - ./ORB_SLAM3/bags:/home/orb/ORB_SLAM3/bags
+#       - ./ORB_SLAM3/maps:/home/orb/ORB_SLAM3/maps
+#       - ./ORB_SLAM3/logs:/home/orb/ORB_SLAM3/logs
 
   dyna-slam1_22_humble_nvidia:
     <<: *dyna-slam1_common
@@ -59,6 +59,7 @@ services:
       - ./orb_slam3_ros2_wrapper/:/root/colcon_ws/src/orb_slam3_ros2_wrapper/
       - ./orb_slam3_map_generator/:/root/colcon_ws/src/orb_slam3_map_generator/
       - ./yolo_ros2/:/root/colcon_ws/src/yolo_ros2/
+      - ./realsense_handler/:/root/colcon_ws/src/realsense_handler/
       - ./slam_msgs/:/root/colcon_ws/src/slam_msgs/
       - ./FastTrack/:/home/orb/ORB_SLAM3/
       - /home/ros2-x13/DYNA-SLAM1-ROS2-Docker/ORB_SLAM3:/home/orb/ORB_SLAM3
