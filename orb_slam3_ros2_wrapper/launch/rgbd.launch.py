@@ -51,6 +51,15 @@ def generate_launch_description():
         param_substitutions = {
             # 'robot_base_frame': base_frame + 'base_footprint',
             # 'odom_frame': base_frame + 'odom'
+            'robot_base_frame': 'base_link',
+            'robot_x': 0.0,
+            'robot_y': 0.0,
+            'robot_z': 0.2,
+            'robot_qx': 0.0,
+            'robot_qy': 0.0,
+            'robot_qz': 0.0,
+            'robot_qw': 1.0,
+            'odometry_mode': True
             }
 
 

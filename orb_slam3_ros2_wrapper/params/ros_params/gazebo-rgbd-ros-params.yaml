@@ -5,7 +5,7 @@
 ORB_SLAM3_RGBD_ROS2:
   ros__parameters:
     # slam related
-    robot_base_frame: base_footprint
+    robot_base_frame: base_link
     global_frame: map
     odom_frame: odom
     rgb_image_topic_name: rgb_camera
@@ -23,7 +23,7 @@ ORB_SLAM3_RGBD_ROS2:
     robot_qw: 1.0
 
     visualization: true
-    odometry_mode: false
+    odometry_mode: true
     publish_tf: true
     map_data_publish_frequency: 1000 # publish every 1000.0 milliseconds
     do_loop_closing: true

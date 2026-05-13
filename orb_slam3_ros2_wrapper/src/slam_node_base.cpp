@@ -73,13 +73,13 @@ namespace ORB_SLAM3_Wrapper
         this->declare_parameter("odom_frame", "odom");
         this->get_parameter("odom_frame", odom_frame_id_);
 
-        this->declare_parameter("robot_x", rclcpp::ParameterValue(1.0));
+        this->declare_parameter("robot_x", rclcpp::ParameterValue(0.0));
         this->get_parameter("robot_x", robot_x_);
 
-        this->declare_parameter("robot_y", rclcpp::ParameterValue(1.0));
+        this->declare_parameter("robot_y", rclcpp::ParameterValue(0.0));
         this->get_parameter("robot_y", robot_y_);
 
-        this->declare_parameter("robot_z", rclcpp::ParameterValue(1.0));
+        this->declare_parameter("robot_z", rclcpp::ParameterValue(0.2));
         this->get_parameter("robot_z", robot_z_);
 
         // Declare and get the quaternion components
@@ -105,7 +105,7 @@ namespace ORB_SLAM3_Wrapper
         initial_pose.orientation.z = robot_qz_;
         initial_pose.orientation.w = robot_qw_;
 
-        this->declare_parameter("odometry_mode", rclcpp::ParameterValue(false));
+        this->declare_parameter("odometry_mode", rclcpp::ParameterValue(true));
         this->get_parameter("odometry_mode", odometry_mode_);
 
         this->declare_parameter("publish_tf", rclcpp::ParameterValue(true));
