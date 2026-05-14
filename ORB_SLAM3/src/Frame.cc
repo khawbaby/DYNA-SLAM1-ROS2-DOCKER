@@ -685,8 +685,8 @@ void Frame::VisualizeGrid(const cv::Mat &imGray) {
         cv::circle(vis, kp.pt, 2, cv::Scalar(0,0,255), -1); // red
     }
 
-    cv::imshow("Dynamic Grid Visualization", vis);
-    cv::waitKey(1);
+    // cv::imshow("Dynamic Grid Visualization", vis);
+    // cv::waitKey(1);
 }
 
 void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)

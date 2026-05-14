@@ -78,6 +78,11 @@ private:
         Frame& mLastFrame   
     );
 
+    std::vector<std::vector<int>> ClusterPoints(
+        Frame& mCurrentFrame,
+        Frame& mLastFrame   
+    );
+
     float computeSigma(const std::vector<float>& data);
     //float computeCost(const Object& track, const Object& det,
                   //float sigma_d, float sigma_m, float sigma_s); 

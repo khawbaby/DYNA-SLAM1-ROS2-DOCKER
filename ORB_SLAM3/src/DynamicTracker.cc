@@ -78,7 +78,8 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
     std::vector<std::vector<int>> clusters;
     std::vector<DynamicObject> CurrentObjects;
     std::vector<DynamicObject> PrevObjects;
-    clusters = ClusterPoints2(mCurrentFrame, mLastFrame);
+    clusters = ClusterPoints(mCurrentFrame, mLastFrame);
+    std::cout << "Done cluster"<< std::endl;
     // cv::imshow("Ellipsoids", mCurrentFrame.mImGray);
     // cv::waitKey(1);
     cv::Mat frame;
@@ -245,7 +246,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
                         1.0f * d_score +
                         0.5f * m_score +
                         0.2f * s_score +
-                        2.0f * iou_score;
+                        1.0f * iou_score;
                
                     // Gating
                     if(totalScore < 50.0f)
@@ -334,61 +335,61 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame,Frame& mLastFrame,
         }
     } else { //[1,0]
         // 🔥 PREDICTION-ONLY MODE (no detections this frame)
-        // if(CurrentObjects.size() == 0 && PrevObjects.size() > 0)
-        // {
-        //     std::vector<DynamicObject> predictedObjects;
+        if(CurrentObjects.size() == 0 && PrevObjects.size() > 0)
+        {
+            std::vector<DynamicObject> predictedObjects;
 
-        //     for(auto& prev : PrevObjects)
-        //     {
-        //         DynamicObject obj = prev;
-        //         obj.missed_frames++;   // 🔥 increment
+            for(auto& prev : PrevObjects)
+            {
+                DynamicObject obj = prev;
+                obj.missed_frames++;   // 🔥 increment
 
-        //         // Drop if too old
-        //         if(obj.missed_frames > MAX_MISSED_FRAMES)
-        //             continue;
-        //         // --- Kalman predict ONLY ---
-        //         if(obj.kf_initialized)
-        //         {
-        //             Eigen::Matrix<float,6,6> F = Eigen::Matrix<float,6,6>::Identity();
-        //             F(0,3)=1; F(1,4)=1; F(2,5)=1;
+                // Drop if too old
+                if(obj.missed_frames > MAX_MISSED_FRAMES)
+                    continue;
+                // --- Kalman predict ONLY ---
+                if(obj.kf_initialized)
+                {
+                    Eigen::Matrix<float,6,6> F = Eigen::Matrix<float,6,6>::Identity();
+                    F(0,3)=1; F(1,4)=1; F(2,5)=1;
 
-        //             Eigen::Matrix<float,6,6> Q = Eigen::Matrix<float,6,6>::Identity() * 0.01f;
+                    Eigen::Matrix<float,6,6> Q = Eigen::Matrix<float,6,6>::Identity() * 0.01f;
 
-        //             obj.kf_x = F * obj.kf_x;
-        //             obj.kf_P = F * obj.kf_P * F.transpose() + Q;
+                    obj.kf_x = F * obj.kf_x;
+                    obj.kf_P = F * obj.kf_P * F.transpose() + Q;
 
-        //             // write back
-        //             obj.centroid3D.x = obj.kf_x(0);
-        //             obj.centroid3D.y = obj.kf_x(1);
-        //             obj.centroid3D.z = obj.kf_x(2);
+                    // write back
+                    obj.centroid3D.x = obj.kf_x(0);
+                    obj.centroid3D.y = obj.kf_x(1);
+                    obj.centroid3D.z = obj.kf_x(2);
 
-        //             obj.velocity.x = obj.kf_x(3);
-        //             obj.velocity.y = obj.kf_x(4);
-        //             obj.velocity.z = obj.kf_x(5);
-        //         }
-        //         else
-        //         {
-        //             // fallback (if KF not initialized)
-        //             obj.centroid3D += prev.velocity;
-        //         }
+                    obj.velocity.x = obj.kf_x(3);
+                    obj.velocity.y = obj.kf_x(4);
+                    obj.velocity.z = obj.kf_x(5);
+                }
+                else
+                {
+                    // fallback (if KF not initialized)
+                    obj.centroid3D += prev.velocity;
+                }
 
-        //         obj.UpdatePoseFromState();
-        //         predictedObjects.push_back(obj);
-        //     }
+                obj.UpdatePoseFromState();
+                predictedObjects.push_back(obj);
+            }
 
-        //     mCurrentFrame.mDynamicObjects = predictedObjects;
-        //     for(int j = 0; j < mCurrentFrame.mDynamicObjects.size(); j++)
-        //     {
-        //         std::cout << mCurrentFrame.mDynamicObjects[j].id << "\t";
-        //         mCurrentFrame.mDynamicObjects[j].DrawEllipsoid2D(frame, mCurrentFrame.mK, mCurrentFrame.GetPose());
-        //     }
+            mCurrentFrame.mDynamicObjects = predictedObjects;
+            for(int j = 0; j < mCurrentFrame.mDynamicObjects.size(); j++)
+            {
+                std::cout << mCurrentFrame.mDynamicObjects[j].id << "\t";
+                mCurrentFrame.mDynamicObjects[j].DrawEllipsoid2D(frame, mCurrentFrame.mK, mCurrentFrame.GetPose());
+            }
 
-        //     if(!frame.empty()) {
-        //         cv::imshow("Ellipsoids", frame);
-        //         cv::waitKey(1);
-        //     }
-        //     return;  // 🚨 IMPORTANT: skip rest of pipeline
-        // }
+            if(!frame.empty()) {
+                cv::imshow("Ellipsoids", frame);
+                cv::waitKey(1);
+            }
+            return;  // 🚨 IMPORTANT: skip rest of pipeline
+        }
         if (PrevObjects.size()>0) {
             onTrackingLost = true;
             std::cout << "1->0 condition, Tracking Lost !" << std::endl;
@@ -433,9 +434,11 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints2(
 
     for(int i = 0; i < N; i++)
     {
+        std::cout << "hi2" << endl;
         int prev_kp_idx = idx_matches[i].first;
         int curr_kp_idx = idx_matches[i].second;
-
+        std::cout << "hi3" << endl;
+        if(prev_kp_idx < 0 || prev_kp_idx >= (int)mLastFrame.mvDynamicPoints3D.size()) continue;
         if(curr_kp_idx < 0 || curr_kp_idx >= M) continue;
         if(visited[curr_kp_idx]) continue;
 
@@ -560,5 +563,264 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints2(
     return clusters;
 }
 
+std::vector<std::vector<int>> DynamicTracker::ClusterPoints(
+    Frame& mCurrentFrame,
+    Frame& mLastFrame
+)
+{
+    struct DynamicTrack
+    {
+        int idx;
+
+        cv::Point2f prev2D;
+        cv::Point2f curr2D;
+
+        cv::Point3f prev3D;
+        cv::Point3f curr3D;
+
+        cv::Point3f flow3D;
+    };
+
+    std::vector<std::vector<int>> clusters;
+
+    // ------------------------------------------------------------
+    // SAFETY CHECKS
+    // ------------------------------------------------------------
+
+    if(mLastFrame.mImGrayLast.empty())
+        return clusters;
+
+    if(mLastFrame.mvDynamicKeys.empty())
+        return clusters;
+
+    if(mCurrentFrame.mvDynamicKeys.empty())
+        return clusters;
+
+    // ------------------------------------------------------------
+    // PREPARE LK INPUT
+    // ------------------------------------------------------------
+
+    std::vector<cv::Point2f> prevPts;
+    prevPts.reserve(mLastFrame.mvDynamicKeys.size());
+
+    int N_prev = std::min(
+        mLastFrame.N_dynamic,
+        (int)mLastFrame.mvDynamicKeys.size()
+    );
+
+    for(int i = 0; i < N_prev; i++)
+    {
+        prevPts.push_back(
+            mLastFrame.mvDynamicKeys[i].pt
+        );
+    }
+
+    // ------------------------------------------------------------
+    // LK OPTICAL FLOW
+    // ------------------------------------------------------------
+
+    std::vector<cv::Point2f> currPts;
+    std::vector<uchar> status;
+    std::vector<float> err;
+
+    cv::calcOpticalFlowPyrLK(
+        mLastFrame.mImGrayLast,
+        mCurrentFrame.mImGray,
+        prevPts,
+        currPts,
+        status,
+        err
+    );
+
+    // ------------------------------------------------------------
+    // BUILD TRACKS
+    // ------------------------------------------------------------
+
+    std::vector<DynamicTrack> tracks;
+
+    auto validPoint3D = [](const cv::Point3f& p)
+    {
+        return std::isfinite(p.x) &&
+               std::isfinite(p.y) &&
+               std::isfinite(p.z);
+    };
+
+    for(int k = 0; k < N_prev; k++)
+    {
+        if(k >= (int)status.size())
+            continue;
+
+        if(!status[k])
+            continue;
+
+        if(k >= (int)mLastFrame.mvDynamicPoints3D.size())
+            continue;
+
+        // --------------------------------------------------------
+        // FIND CORRESPONDING CURRENT KEYPOINT
+        // --------------------------------------------------------
+
+        int idx_curr = -1;
+        float bestDist = 5.0f;
+
+        for(int i = 0; i < mCurrentFrame.N_dynamic; i++)
+        {
+            if(i >= (int)mCurrentFrame.mvDynamicKeys.size())
+                continue;
+
+            float dist = cv::norm(
+                mCurrentFrame.mvDynamicKeys[i].pt -
+                currPts[k]
+            );
+
+            if(dist < bestDist)
+            {
+                bestDist = dist;
+                idx_curr = i;
+            }
+        }
+
+        if(idx_curr < 0)
+            continue;
+
+        if(idx_curr >= (int)mCurrentFrame.mvDynamicPoints3D.size())
+            continue;
+
+        cv::Point3f prev3D =
+            mLastFrame.mvDynamicPoints3D[k];
+
+        cv::Point3f curr3D =
+            mCurrentFrame.mvDynamicPoints3D[idx_curr];
+
+        if(!validPoint3D(prev3D))
+            continue;
+
+        if(!validPoint3D(curr3D))
+            continue;
+
+        DynamicTrack tr;
+
+        tr.idx = idx_curr;
+
+        tr.prev2D = prevPts[k];
+        tr.curr2D = currPts[k];
+
+        tr.prev3D = prev3D;
+        tr.curr3D = curr3D;
+
+        tr.flow3D = curr3D - prev3D;
+
+        tracks.push_back(tr);
+    }
+
+    // ------------------------------------------------------------
+    // NO TRACKS
+    // ------------------------------------------------------------
+
+    if(tracks.empty())
+        return clusters;
+
+    // ------------------------------------------------------------
+    // CLUSTERING
+    // ------------------------------------------------------------
+
+    const float SPATIAL_THRESH = 0.5f;
+    const float MOTION_THRESH  = 0.3f;
+    const int   MIN_CLUSTER    = 5;
+
+    std::vector<bool> visited(
+        tracks.size(),
+        false
+    );
+
+    for(size_t i = 0; i < tracks.size(); i++)
+    {
+        if(visited[i])
+            continue;
+
+        std::queue<int> q;
+
+        q.push(i);
+        visited[i] = true;
+
+        std::vector<int> cluster;
+
+        while(!q.empty())
+        {
+            int a = q.front();
+            q.pop();
+
+            cluster.push_back(
+                tracks[a].idx
+            );
+
+            for(size_t b = 0; b < tracks.size(); b++)
+            {
+                if(visited[b])
+                    continue;
+
+                // --------------------------------------------
+                // SPATIAL CONSISTENCY
+                // --------------------------------------------
+
+                float spatialDist =
+                    cv::norm(
+                        tracks[a].curr3D -
+                        tracks[b].curr3D
+                    );
+
+                if(spatialDist > SPATIAL_THRESH)
+                    continue;
+
+                // --------------------------------------------
+                // MOTION CONSISTENCY
+                // --------------------------------------------
+
+                cv::Point3f flowA =
+                    tracks[a].flow3D;
+
+                cv::Point3f flowB =
+                    tracks[b].flow3D;
+
+                // depth normalize
+
+                float depthA =
+                    std::max(
+                        tracks[a].prev3D.z,
+                        1e-3f
+                    );
+
+                float depthB =
+                    std::max(
+                        tracks[b].prev3D.z,
+                        1e-3f
+                    );
+
+                flowA *= (1.0f / depthA);
+                flowB *= (1.0f / depthB);
+
+                float motionDist =
+                    cv::norm(flowA - flowB);
+
+                if(motionDist < MOTION_THRESH)
+                {
+                    visited[b] = true;
+                    q.push(b);
+                }
+            }
+        }
+
+        // --------------------------------------------------------
+        // SAVE VALID CLUSTER
+        // --------------------------------------------------------
+
+        if((int)cluster.size() >= MIN_CLUSTER)
+        {
+            clusters.push_back(cluster);
+        }
+    }
+
+    return clusters;
+}
 }
 

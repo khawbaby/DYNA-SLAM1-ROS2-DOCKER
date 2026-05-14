@@ -1490,12 +1490,17 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         // Use PREVIOUS axes only
         // (shape stabilization)
         // =========================================
-        Eigen::Vector3d axes(
+        Eigen::Vector3d axes_prev(
             prev.axes.at<float>(0,0),
             prev.axes.at<float>(1,0),
             prev.axes.at<float>(2,0)
         );
 
+        Eigen::Vector3d axes_curr(
+            curr.axes.at<float>(0,0),
+            curr.axes.at<float>(1,0),
+            curr.axes.at<float>(2,0)
+        );
         // =========================================
         // Sample sparse ellipsoid points
         // =========================================
@@ -1528,8 +1533,8 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
                 // =================================
                 // Fixed shape across time
                 // =================================
-                e->axes_prev = axes;
-                e->axes_curr = axes;
+                e->axes_prev = axes_prev;
+                e->axes_curr = axes_curr;
 
                 // =================================
                 // Zero residual target
@@ -1543,7 +1548,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
                 // Humans are non-rigid
                 // =================================
                 e->setInformation(
-                    0.0001 *
+                    0.001 *
                     Eigen::Matrix3d::Identity()
                 );
 

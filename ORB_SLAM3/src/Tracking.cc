@@ -2005,41 +2005,44 @@ void Tracking::Track()
             status, err
         );
         
+        // std::cout << "status size: " << status.size() << std::endl;
+        // std::cout << "last frame dynamic size: " << mLastFrame.N_dynamic << std::endl;
+
         // 3D Correspondeces (Tracked Pairs)
         std::vector<std::pair<cv::Point3f, cv::Point3f>> dyn_kp_matches;
         std::vector<std::pair<int, int>> idx_matches;
-        
-        for(int k = 0; k < mLastFrame.N_dynamic; k++)
-        {
-            // Cant find this point in curr Frame from optical flow
-            if(!status[k]) continue;
+        mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
+        // for(int k = 0; k < mLastFrame.N_dynamic; k++)
+        // {
+        //     // Cant find this point in curr Frame from optical flow
+        //     if(!status[k]) continue;
+        //     std::cout << "hi1" << endl;
+        //     // find nearest keypoint in current frame
+        //     int idx_curr = -1;
+        //     float bestDist = 5.0f;
 
-            // find nearest keypoint in current frame
-            int idx_curr = -1;
-            float bestDist = 5.0f;
-
-            for(int i = 0; i < mCurrentFrame.N_dynamic; i++)
-            {
+        //     for(int i = 0; i < mCurrentFrame.N_dynamic; i++)
+        //     {
     
-                float dist = cv::norm(mCurrentFrame.mvDynamicKeys[i].pt - prevPts[k]);
+        //         float dist = cv::norm(mCurrentFrame.mvDynamicKeys[i].pt - currPts[k]);
 
-                if(dist < bestDist)
-                {
-                    bestDist = dist;
-                    idx_curr = i;
-                }
-            }
+        //         if(dist < bestDist)
+        //         {
+        //             bestDist = dist;
+        //             idx_curr = i;
+        //         }
+        //     }
 
-            if(idx_curr < 0) continue;
+        //     if(idx_curr < 0) continue;
 
-            // already a pair with tracked correspondence (prev, curr)
-            dyn_kp_matches.emplace_back(mLastFrame.mvDynamicPoints3D[k], mCurrentFrame.mvDynamicPoints3D[idx_curr]);
-            idx_matches.emplace_back(k, idx_curr);
-        }
-
-        if (dyn_kp_matches.size() == idx_matches.size()) {
-            mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
-        }
+        //     // already a pair with tracked correspondence (prev, curr)
+        //     dyn_kp_matches.emplace_back(mLastFrame.mvDynamicPoints3D[k], mCurrentFrame.mvDynamicPoints3D[idx_curr]);
+        //     idx_matches.emplace_back(k, idx_curr);
+        // }
+        
+        // if (dyn_kp_matches.size() == idx_matches.size()) {
+        //     mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
+        // }
 
     }
 
