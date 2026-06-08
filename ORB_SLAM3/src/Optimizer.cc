@@ -1172,6 +1172,13 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
 int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
 {
+    if(!prevFrame || 
+       prevFrame->mDynamicObjects.empty() || 
+       pFrame->mDynamicObjects.empty())
+    {
+        return PoseOptimization(pFrame);
+    }
+    
     g2o::SparseOptimizer optimizer;
     g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
 
@@ -1515,6 +1522,8 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
             obj.points3D_local.push_back(X_obj);
         }
 
+        if(!obj.T_obj.matrix().allFinite()) continue;
+        
         int N = std::min(obj.points2D.size(), obj.points3D_local.size());
         if(N < 3) continue;
 

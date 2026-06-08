@@ -3103,7 +3103,7 @@ bool Tracking::TrackReferenceKeyFrame()
     }
     // cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw << endl;
     //Optimizer::PoseOptimization(&mCurrentFrame);
-    Optimizer::PoseOptimization(&mCurrentFrame, &mLastFrame);
+    //Optimizer::PoseOptimization(&mCurrentFrame, &mLastFrame);
     // Discard outliers
     int nmatchesMap = 0;
     for(int i =0; i<mCurrentFrame.N; i++)
