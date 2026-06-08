@@ -19,6 +19,7 @@
 
 
 #include "System.h"
+#include "DynamicTracker.h"
 #include "Converter.h"
 #include <thread>
 #include <pangolin/pangolin.h>

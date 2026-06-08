@@ -1,4 +1,5 @@
 #pragma once
+
 #include "DynamicObject.h"
 #include <vector>
 #include <queue>
@@ -35,6 +36,7 @@ struct DynamicPtsInfo {
 
 class DynamicTracker {
 public:
+    FrameDrawer* mpFrameDrawer = nullptr;
     bool onInitialization;
     bool onTrackingLost;
     DynamicPtsInfo dynamic_info;

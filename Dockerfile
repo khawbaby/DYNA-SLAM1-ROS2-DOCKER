@@ -61,6 +61,7 @@ RUN apt-get update && apt-get install -y \
     ros-humble-robot-localization \
     ros-humble-tf2-ros \
     ros-humble-tf2-tools \
+    ros-humble-topic-tools \
     ros-humble-tf-transformations \
     ros-humble-rviz2 \
     ros-humble-robot-state-publisher \

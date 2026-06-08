@@ -49,6 +49,9 @@
 #include <mutex>
 #include <unordered_set>
 
+#include <opencv2/dnn.hpp>
+#include <opencv2/opencv.hpp>
+
 namespace ORB_SLAM3
 {
 
@@ -128,7 +131,6 @@ public:
     std::vector<cv::Point3f> dynamicPrev;
     cv::Mat mLastDynamicMask;
     cv::Mat mCurrentDynamicMask;
-
     std::unique_ptr<DynamicTracker> mpDynamicTracker;
     
     // // Import module yolo_interface 

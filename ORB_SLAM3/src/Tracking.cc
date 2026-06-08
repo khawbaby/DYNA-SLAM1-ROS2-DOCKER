@@ -39,6 +39,9 @@
 #include <mutex>
 #include <chrono>
 
+#include <opencv2/dnn.hpp>
+#include <opencv2/opencv.hpp>
+
 using namespace std;
 
 namespace ORB_SLAM3
@@ -55,6 +58,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mLastDynamicMask = cv::Mat();
     mCurrentDynamicMask = cv::Mat();
     mpDynamicTracker = std::make_unique<DynamicTracker>();
+    mpDynamicTracker->mpFrameDrawer = mpFrameDrawer;
     // mpDynamicTracker = new DynamicTracker();
     // Python Binding 
     // Py_Initialize();
@@ -1575,7 +1579,47 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 {
     mImGray = imRGB;
     cv::Mat imDepth = imD;
-   
+
+    std::cout << "HI" << std::endl;
+    cv::dnn::Net net;
+    net = cv::dnn::readNetFromONNX(
+        "/home/orb/ORB_SLAM3/models/yolov8n-seg.onnx"
+    );
+    std::cout << "Read ONNX File" << std::endl;
+    net.setPreferableBackend(
+        cv::dnn::DNN_BACKEND_CUDA
+    );
+
+    net.setPreferableTarget(
+        cv::dnn::DNN_TARGET_CUDA
+    );
+
+    cv::Mat blob;
+
+    cv::dnn::blobFromImage(
+        imRGB,
+        blob,
+        1.0 / 255.0,
+        cv::Size(480,640),
+        cv::Scalar(),
+        true,
+        false
+    );
+
+    net.setInput(blob);
+
+    std::vector<cv::Mat> outputs;
+
+    net.forward(
+        outputs,
+        net.getUnconnectedOutLayersNames()
+    );
+
+    std::cout << outputs.size() << std::endl;
+
+    // load yolo segmentation result and create dynamic mask
+    // load yolo detection 
+
     if(mImGray.channels()==3)
     {
         if(mbRGB)
@@ -1683,7 +1727,44 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 {
     mImGray = imRGB;
     cv::Mat imDepth = imD;
-   
+
+    // std::cout << "HI" << std::endl;
+    // cv::dnn::Net net;
+    // net = cv::dnn::readNetFromONNX(
+    //     "/home/orb/ORB_SLAM3/models/yolov8n-seg.onnx"
+    // );
+    // std::cout << "Read ONNX File" << std::endl;
+    // net.setPreferableBackend(
+    //     cv::dnn::DNN_BACKEND_CUDA
+    // );
+
+    // net.setPreferableTarget(
+    //     cv::dnn::DNN_TARGET_CUDA
+    // );
+
+    // cv::Mat blob;
+
+    // cv::dnn::blobFromImage(
+    //     imRGB,
+    //     blob,
+    //     1.0 / 255.0,
+    //     cv::Size(480,640),
+    //     cv::Scalar(),
+    //     true,
+    //     false
+    // );
+
+    // net.setInput(blob);
+
+    // std::vector<cv::Mat> outputs;
+
+    // net.forward(
+    //     outputs,
+    //     net.getUnconnectedOutLayersNames()
+    // );
+
+    // std::cout << outputs.size() << std::endl;
+
     if(mImGray.channels()==3)
     {
         if(mbRGB)
@@ -1999,11 +2080,11 @@ void Tracking::Track()
 
         //std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
         
-        cv::calcOpticalFlowPyrLK(
-            mLastFrame.mImGrayLast, mCurrentFrame.mImGray,
-            prevPts, currPts,
-            status, err
-        );
+        // cv::calcOpticalFlowPyrLK(
+        //     mLastFrame.mImGrayLast, mCurrentFrame.mImGray,
+        //     prevPts, currPts,
+        //     status, err
+        // );
         
         // std::cout << "status size: " << status.size() << std::endl;
         // std::cout << "last frame dynamic size: " << mLastFrame.N_dynamic << std::endl;
@@ -2011,7 +2092,13 @@ void Tracking::Track()
         // 3D Correspondeces (Tracked Pairs)
         std::vector<std::pair<cv::Point3f, cv::Point3f>> dyn_kp_matches;
         std::vector<std::pair<int, int>> idx_matches;
-        mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
+        if (!mLastFrame.mImGrayLast.empty() && 
+            !mLastFrame.mvDynamicKeys.empty() && 
+            !mCurrentFrame.mvDynamicKeys.empty())
+        {
+            mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, {}, {});  
+        }
+        
         // for(int k = 0; k < mLastFrame.N_dynamic; k++)
         // {
         //     // Cant find this point in curr Frame from optical flow
@@ -3005,6 +3092,15 @@ bool Tracking::TrackReferenceKeyFrame()
     //mCurrentFrame.PrintPointDistribution();
 
 
+    if(mLastFrame.mDynamicObjects.empty() || mCurrentFrame.mDynamicObjects.empty())
+    {
+        // skip dynamic optimization, run standard PoseOptimization
+        nmatches = Optimizer::PoseOptimization(&mCurrentFrame);
+    }
+    else
+    {       
+        nmatches = Optimizer::PoseOptimization(&mCurrentFrame, &mLastFrame);
+    }
     // cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw << endl;
     //Optimizer::PoseOptimization(&mCurrentFrame);
     Optimizer::PoseOptimization(&mCurrentFrame, &mLastFrame);

@@ -3,6 +3,9 @@
   <Domain id="any">
     <General>
       <NetworkInterfaceAddress>lo</NetworkInterfaceAddress>
+      <!-- <Interfaces>
+        <NetworkInterface autodetermine="true"/>
+      </Interfaces> -->
       <AllowMulticast>true</AllowMulticast>
     </General>
     <Discovery>

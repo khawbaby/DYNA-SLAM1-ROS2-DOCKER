@@ -57,7 +57,7 @@ public:
     
 public:
     DynamicObject(int _id);
-
+    
     float ComputeIoU(const cv::Rect& a, const cv::Rect& b);
 
     void Update(const std::vector<cv::Point3f>& newPoints,
@@ -86,8 +86,11 @@ public:
         kf_P = Eigen::Matrix<float,6,6>::Identity() * 0.1f;
         kf_initialized = true;
     }
-
     
+    // Add to DynamicObject.h public section:
+    int tracked_frames = 0;
+    void UpdateKalmanFilter(const cv::Point3f& measuredCentroid);
+    void RebuildEllipsoidPoints();
 };
 
 }

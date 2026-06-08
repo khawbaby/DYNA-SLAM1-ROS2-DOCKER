@@ -42,7 +42,7 @@ class FrameDrawer
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     FrameDrawer(Atlas* pAtlas);
-
+    void SetDynamicFrame(const cv::Mat& frame);
     // Update info from the last processed frame.
     void Update(Tracking *pTracker);
 
@@ -52,6 +52,9 @@ public:
 
     bool both;
 
+private:
+    cv::Mat mDynamicFrame;
+    
 protected:
 
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);

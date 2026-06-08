@@ -1353,50 +1353,47 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     }
     }
 
-    if(nInitialCorrespondences<3)
-        return 0;
+    if(nInitialCorrespondences < 3)
+    return 0;
 
-    int objIdStart = 10000;
     
-    // --- Create vertices ---
+    // ----------------------------------------------------------------
+    // CREATE OBJECT VERTICES
+    // ----------------------------------------------------------------
     std::map<int, VertexObject*> currObjVertices;
     std::map<int, VertexObject*> prevObjVertices;
-    
+
     for(auto& obj : pFrame->mDynamicObjects)
     {
+        assert(obj.id < 900 && "Object ID too large, risk of vertex ID collision");
+
         VertexObject* vObj = new VertexObject();
-
-        vObj->setId(obj.id+1000);
-
-        Eigen::Vector3d t = obj.T_obj.translation();
-        Eigen::Matrix3d R = obj.T_obj.rotationMatrix();
-
-        vObj->setEstimate(Sophus::SE3d(R, t));
-
+        vObj->setId(obj.id + 1000);
+        vObj->setEstimate(obj.T_obj);
+        vObj->setFixed(false);
         optimizer.addVertex(vObj);
 
         currObjVertices[obj.id] = vObj;
     }
 
-    
     for(auto& obj : prevFrame->mDynamicObjects)
     {
+        assert(obj.id < 900 && "Object ID too large, risk of vertex ID collision");
+
         VertexObject* vObj = new VertexObject();
-
-        vObj->setId(obj.id + 2000);   // DIFFERENT offset
+        vObj->setId(obj.id + 2000);
         vObj->setEstimate(obj.T_obj);
-
-        vObj->setFixed(true);  // anchor previous frame (important)
-
+        vObj->setFixed(true);
         optimizer.addVertex(vObj);
 
         prevObjVertices[obj.id] = vObj;
     }
 
-    std::vector<DynamicObject> CurrObjects = pFrame->mDynamicObjects;
-    std::vector<DynamicObject> PrevObjects = prevFrame->mDynamicObjects;
+    // ----------------------------------------------------------------
+    // MOTION EDGES (prev obj -> curr obj)
+    // ----------------------------------------------------------------
+    std::vector<EdgeObjectMotion*> vpEdgesMotion;
 
-    //--- Add motion edges --- obj2obj
     for(auto& curr : pFrame->mDynamicObjects)
     {
         auto it_prev = std::find_if(
@@ -1405,91 +1402,59 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
             [&](const DynamicObject& o){ return o.id == curr.id; }
         );
 
-        if(it_prev == prevFrame->mDynamicObjects.end())
-            continue;
+        if(it_prev == prevFrame->mDynamicObjects.end()) continue;
 
         const DynamicObject& prev = *it_prev;
-        if (prev.velocity.x < -999 )
-            continue;
 
-        Eigen::Vector3d t(
-            prev.velocity.x,
-            prev.velocity.y,
-            prev.velocity.z
+        if(prev.velocity.x < -999.0f) continue;
+
+        auto itP = prevObjVertices.find(prev.id);
+        auto itC = currObjVertices.find(curr.id);
+        if(itP == prevObjVertices.end() || itC == currObjVertices.end()) continue;
+
+        Sophus::SE3d T_motion(
+            Eigen::Matrix3d::Identity(),
+            Eigen::Vector3d(prev.velocity.x, prev.velocity.y, prev.velocity.z)
         );
-        // assume no rotation for now
-        Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
-
-        Sophus::SE3d T_motion(R, t);
 
         EdgeObjectMotion* e = new EdgeObjectMotion();
-
-        e->setVertex(0, prevObjVertices[prev.id]);   // t-1
-        e->setVertex(1, currObjVertices[curr.id]);   // t
-
+        e->setVertex(0, itP->second);
+        e->setVertex(1, itC->second);
         e->setMeasurement(T_motion);
+        e->setInformation(0.1 * Eigen::Matrix<double,6,6>::Identity());
 
-        e->setInformation(
-            0.1 * Eigen::Matrix<double,6,6>::Identity()
-        );
+        g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+        e->setRobustKernel(rk);
+        rk->setDelta(std::sqrt(5.991));
 
         optimizer.addEdge(e);
+        vpEdgesMotion.push_back(e);
     }
-    
-    int steps = 4;   // weak temporal smoothness only
+
+    // ----------------------------------------------------------------
+    // ELLIPSOID SHAPE CONSISTENCY EDGES (prev obj <-> curr obj)
+    // ----------------------------------------------------------------
+    const int ELLIPSOID_STEPS = 4;
 
     for(auto& curr : pFrame->mDynamicObjects)
     {
-        // =========================================
-        // Find matching object in previous frame
-        // =========================================
         auto it_prev = std::find_if(
             prevFrame->mDynamicObjects.begin(),
             prevFrame->mDynamicObjects.end(),
-            [&](const DynamicObject& o)
-            {
-                return o.id == curr.id;
-            }
+            [&](const DynamicObject& o){ return o.id == curr.id; }
         );
 
-        if(it_prev == prevFrame->mDynamicObjects.end())
-            continue;
+        if(it_prev == prevFrame->mDynamicObjects.end()) continue;
 
         const DynamicObject& prev = *it_prev;
 
-        // =========================================
-        // Reject unstable associations
-        // =========================================
-        float motion_dist =
-            cv::norm(curr.centroid3D - prev.centroid3D);
+        if(cv::norm(curr.centroid3D - prev.centroid3D) > 2.0f) continue;
+        if(curr.points3D.size() < 10) continue;
 
-        // Skip if association too far away
-        if(motion_dist > 2.0f)
-            continue;
+        auto itP = prevObjVertices.find(prev.id);
+        auto itC = currObjVertices.find(curr.id);
+        if(itP == prevObjVertices.end() || itC == currObjVertices.end()) continue;
 
-        // =========================================
-        // Get graph vertices
-        // =========================================
-        auto itPrevV = prevObjVertices.find(prev.id);
-        auto itCurrV = currObjVertices.find(curr.id);
-
-        if(itPrevV == prevObjVertices.end() ||
-        itCurrV == currObjVertices.end())
-            continue;
-
-        VertexObject* vPrev = itPrevV->second;
-        VertexObject* vCurr = itCurrV->second;
-
-        // =========================================
-        // Skip weak/noisy objects
-        // =========================================
-        if(curr.points3D.size() < 10)
-            continue;
-
-        // =========================================
-        // Use PREVIOUS axes only
-        // (shape stabilization)
-        // =========================================
         Eigen::Vector3d axes_prev(
             prev.axes.at<float>(0,0),
             prev.axes.at<float>(1,0),
@@ -1501,143 +1466,39 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
             curr.axes.at<float>(1,0),
             curr.axes.at<float>(2,0)
         );
-        // =========================================
-        // Sample sparse ellipsoid points
-        // =========================================
-        for(int i = 0; i < steps; i++)
+
+        for(int i = 0; i < ELLIPSOID_STEPS; i++)
         {
-            // Better sampling distribution
-            float theta =
-                CV_PI * (i + 0.5f) / steps;
+            float theta = CV_PI * (i + 0.5f) / ELLIPSOID_STEPS;
 
-            for(int j = 0; j < steps; j++)
+            for(int j = 0; j < ELLIPSOID_STEPS; j++)
             {
-                float phi =
-                    2.0f * CV_PI * j / steps;
+                float phi = 2.0f * CV_PI * j / ELLIPSOID_STEPS;
 
-                EdgeEllipsoidRigid* e =
-                    new EdgeEllipsoidRigid();
-
-                // =================================
-                // Graph vertices
-                // =================================
-                e->setVertex(0, vPrev);
-                e->setVertex(1, vCurr);
-
-                // =================================
-                // Sample location
-                // =================================
-                e->theta = theta;
-                e->phi   = phi;
-
-                // =================================
-                // Fixed shape across time
-                // =================================
+                EdgeEllipsoidRigid* e = new EdgeEllipsoidRigid();
+                e->setVertex(0, itP->second);
+                e->setVertex(1, itC->second);
+                e->theta     = theta;
+                e->phi       = phi;
                 e->axes_prev = axes_prev;
                 e->axes_curr = axes_curr;
+                e->setMeasurement(Eigen::Vector3d::Zero());
+                e->setInformation(0.01 * Eigen::Matrix3d::Identity());
 
-                // =================================
-                // Zero residual target
-                // =================================
-                e->setMeasurement(
-                    Eigen::Vector3d::Zero()
-                );
-
-                // =================================
-                // VERY WEAK soft constraint
-                // Humans are non-rigid
-                // =================================
-                e->setInformation(
-                    0.001 *
-                    Eigen::Matrix3d::Identity()
-                );
-
-                // =================================
-                // Robust kernel
-                // =================================
-                auto* rk =
-                    new g2o::RobustKernelHuber;
-
+                g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
                 e->setRobustKernel(rk);
+                rk->setDelta(4.0);
 
-                // Better for noisy human motion
-                rk->setDelta(2.0);
-
-                // =================================
-                // Add edge
-                // =================================
                 optimizer.addEdge(e);
             }
         }
     }
-    
-    // Rigid Body constraint: 3D point in object should move rigidly between frames
-    // for(int j=0; j<pFrame->mDynamicObjects.size(); j++) {
-    //     const auto& obj = pFrame->mDynamicObjects[j];
-    //     auto it_prev = std::find_if(
-    //     prevFrame->mDynamicObjects.begin(),
-    //     prevFrame->mDynamicObjects.end(),
-    //         [&](const DynamicObject& o){ return o.id == obj.id; }
-    //     );
 
-    //     if(it_prev == prevFrame->mDynamicObjects.end())
-    //         continue;
-
-    //     const DynamicObject& prev_obj = *it_prev;
-
-    //     if(!obj.has2DObservation || !prev_obj.has2DObservation) continue;
-    //     int N = std::min(obj.points3D_local.size(), prev_obj.points3D_local.size());
-    //     if(N < 3) continue;
-        
-    //     for(int i=0; i<N; i++) {
-    //         EdgeRigidBody* e = new EdgeRigidBody();
-
-    //         e->setVertex(0, prevObjVertices[prev_obj.id]);   // t-1
-    //         e->setVertex(1, currObjVertices[obj.id]);   // t
-
-    //         e->X_prev = prev_obj.points3D_local[i];
-    //         e->X_curr = obj.points3D_local[i];
-
-    //         e->setMeasurement(Eigen::Vector3d::Zero());
-    //         e->setInformation(
-    //             0.1 * Eigen::Matrix3d::Identity()
-    //         );
-
-    //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-    //     e->setRobustKernel(rk);
-    //     rk->setDelta(sqrt(5.991));
-    //         optimizer.addEdge(e);
-    //     }
-    // }
-
-    // --- Add dynamic reprojection constraint edge --- obj -> cam
-    // -------------- Centroid only --------------
-    // for(auto& obj : pFrame->mDynamicObjects)
-    // {
-    //     if(!obj.has2DObservation) continue;
-
-    //     EdgeCameraObject* e = new EdgeCameraObject();
-
-    //     e->setVertex(0, vSE3);                        // camera
-    //     e->setVertex(1, currObjVertices[obj.id]);      // object
-
-    //     e->X_obj = Eigen::Vector3d(0,0,0);            // object center
-        
-    //     Eigen::Vector2d obs;
-    //     obs << obj.centroid2D.x, obj.centroid2D.y;
-
-    //     e->setMeasurement(obs);
-    //     e->pCamera = pFrame->mpCamera;
-
-    //     e->setInformation(Eigen::Matrix2d::Identity());
-
-    //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-    //     e->setRobustKernel(rk);
-    //     rk->setDelta(sqrt(5.991));
-
-    //     optimizer.addEdge(e);
-    // }
-
+    // ----------------------------------------------------------------
+    // REPROJECTION EDGES (camera <-> curr obj points)
+    // ----------------------------------------------------------------
+    std::vector<EdgeCameraObject*> vpEdgesCamObj;
+    std::vector<int>               vnIndexEdgeCamObj;
 
     for(auto& obj : pFrame->mDynamicObjects)
     {
@@ -1646,43 +1507,41 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         auto it = currObjVertices.find(obj.id);
         if(it == currObjVertices.end()) continue;
 
-        VertexObject* vObj = it->second;
+        obj.points3D_local.clear();
+        for(int i = 0; i < (int)obj.points3D.size(); i++)
+        {
+            Eigen::Vector3d Pw    = Converter::toVector3d(obj.points3D[i]);
+            Eigen::Vector3d X_obj = obj.T_obj.inverse() * Pw;
+            obj.points3D_local.push_back(X_obj);
+        }
 
         int N = std::min(obj.points2D.size(), obj.points3D_local.size());
         if(N < 3) continue;
 
         for(int i = 0; i < N; i++)
         {
-            const cv::KeyPoint& kp = obj.points2D[i];
             const Eigen::Vector3d& X_obj = obj.points3D_local[i];
-
-            // --- Safety checks ---
             if(!X_obj.allFinite()) continue;
 
-            EdgeCameraObject* e = new EdgeCameraObject();
-
-            e->setVertex(0, vSE3);   // camera
-            e->setVertex(1, vObj);   // object
-
-            e->X_obj = X_obj;
-
             Eigen::Vector2d obs;
-            obs << kp.pt.x, kp.pt.y;
-
+            obs << obj.points2D[i].pt.x, obj.points2D[i].pt.y;
             if(!obs.allFinite()) continue;
 
+            EdgeCameraObject* e = new EdgeCameraObject();
+            e->setVertex(0, vSE3);
+            e->setVertex(1, it->second);
+            e->X_obj = X_obj;
             e->setMeasurement(obs);
             e->pCamera = pFrame->mpCamera;
+            e->setInformation(0.25 * Eigen::Matrix2d::Identity());
 
-            // --- Information (pixel noise ~2px) ---
-            e->setInformation((1.0 / 4.0) * Eigen::Matrix2d::Identity());
-
-            // --- Robust kernel ---
-            auto* rk = new g2o::RobustKernelHuber;
+            g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
             e->setRobustKernel(rk);
             rk->setDelta(std::sqrt(5.991));
 
             optimizer.addEdge(e);
+            vpEdgesCamObj.push_back(e);
+            vnIndexEdgeCamObj.push_back(obj.id);
         }
     }
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier

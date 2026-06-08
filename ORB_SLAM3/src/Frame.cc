@@ -337,8 +337,8 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     //std::cout << "Before dynamic Filtering: " << mvKeys.size() << std::endl;
     // cout << "size of keyframe matrix: " << mvbDynamic.size() << endl;
     int dilation_size = 7;
-    if (detections.size() > 0)
-        std::cout << detections[0].bbox << std::endl;
+    // if (detections.size() > 0)
+    //     std::cout << detections[0].bbox << std::endl;
     // Morphological Actions
     cv::Mat kernel = cv::getStructuringElement(
         cv::MORPH_ELLIPSE,
@@ -400,29 +400,28 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     for(size_t i = 0; i < mvDynamicKeys.size(); i++)
     {
-        const cv::KeyPoint &kp = mvDynamicKeys[i];
-
+        const cv::KeyPoint& kp = mvDynamicKeys[i];
         int x = round(kp.pt.x);
         int y = round(kp.pt.y);
 
         if(x < 0 || x >= imDepth.cols || y < 0 || y >= imDepth.rows)
+        {
+            mvDynamicPoints3D.emplace_back(NAN, NAN, NAN);
             continue;
+        }
 
         float d = imDepth.at<float>(y, x);
-        if(d <= 0) continue;
+
+        if(d <= 0)
+        {
+            mvDynamicPoints3D.emplace_back(NAN, NAN, NAN);
+            continue;
+        }
 
         float X = (kp.pt.x - cx) * d * invfx;
         float Y = (kp.pt.y - cy) * d * invfy;
-        float Z = d;
 
-        if(d > 0)
-        {
-            mvDynamicPoints3D.emplace_back(X,Y,Z);
-        }
-        else
-        {
-            mvDynamicPoints3D.emplace_back(NAN,NAN,NAN);
-        }
+        mvDynamicPoints3D.emplace_back(X, Y, d);
     }
     // cout << "Number of filtered dynamic keyframes: " << mvbDynamic.size() << endl;
     // cout << "size of filtered keyframe matrix: " << mvKeys.size() << endl;

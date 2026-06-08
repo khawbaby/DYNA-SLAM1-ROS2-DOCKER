@@ -187,14 +187,29 @@ namespace ORB_SLAM3_Wrapper
 
             slamDetections.push_back(d);
         }
-        auto Tcw = interface()->slam()->TrackRGBD(
-            cvRGB->image,
-            cvD->image,
-            mask_copy,
-            slamDetections,
-            stampToSec(msgRGB->header.stamp)
-        );
-
+        Sophus::SE3f Tcw;
+        try {
+            auto Tcw = interface()->slam()->TrackRGBD(
+                cvRGB->image,
+                cvD->image,
+                mask_copy,
+                slamDetections,
+                stampToSec(msgRGB->header.stamp)
+            );
+        } catch (const std::exception& e) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "ORB-SLAM3 exception: %s",
+                e.what()
+            );
+            return;
+        } catch(...) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Unknown ORB-SLAM3 fatal exception"
+            );
+            return;
+        }
         // =========================================
         // FPS
         // =========================================

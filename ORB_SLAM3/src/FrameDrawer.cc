@@ -197,8 +197,20 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 
     cv::Mat imWithInfo;
     DrawTextInfo(im,state, imWithInfo);
-
+    unique_lock<mutex> lock(mMutex);
+    if(!mDynamicFrame.empty())
+    {
+        cv::imshow("Ellipsoids", mDynamicFrame);
+        cv::waitKey(1);
+    }
     return imWithInfo;
+}
+
+void FrameDrawer::SetDynamicFrame(const cv::Mat& frame)
+{
+    unique_lock<mutex> lock(mMutex);
+    if(!frame.empty())
+        mDynamicFrame = frame.clone();
 }
 
 cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
