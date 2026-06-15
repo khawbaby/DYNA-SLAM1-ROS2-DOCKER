@@ -51,10 +51,27 @@ void DynamicTracker::rstVars()
     // reserved
 }
 
+void DynamicTracker::Reset()
+{
+    next_id = 0;
+    onInitialization = true;
+    onTrackingLost = false;
+    // Clear any cached state
+}
+
 void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
     const std::vector<std::pair<int,int>>& _idx_matches,
     const std::vector<std::pair<cv::Point3f, cv::Point3f>>& _optical_flow_matches)
 {
+    if(onInitialization)
+    {
+        mLastFrame.mDynamicObjects.clear();
+        mCurrentFrame.mDynamicObjects.clear();
+    }
+
+    if(mCurrentFrame.mImGray.empty()) return;
+    if(mLastFrame.mImGrayLast.empty()) return;
+    
     std::vector<std::vector<int>> clusters;
     std::vector<DynamicObject> CurrentObjects;
     std::vector<DynamicObject> PrevObjects;
@@ -102,7 +119,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
         }
 
         float ratio = (float)dynamic_pixels / (float)objCurr2D.size();
-        if(ratio < 0.3f)
+        if(ratio < 0.5f)
             continue;
 
         cv::Rect clusterBox(
@@ -441,6 +458,20 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
 
     if(mpFrameDrawer && !frame.empty())
         mpFrameDrawer->SetDynamicFrame(frame);
+
+    // Add to DynamicTracker::ProcessFrame, temporary debug
+    for(auto& obj : mCurrentFrame.mDynamicObjects)
+    {
+        std::cout << "[DynObj] id=" << obj.id
+                << " missed=" << obj.missed_frames
+                << " tracked=" << obj.tracked_frames
+                << " centroid=(" << obj.centroid3D.x << ","
+                << obj.centroid3D.y << ","
+                << obj.centroid3D.z << ")"
+                << " vel=(" << obj.velocity.x << ","
+                << obj.velocity.y << ","
+                << obj.velocity.z << ")" << std::endl;
+    }
 }
 
 float DynamicTracker::Distance(const cv::Point3f& a, const cv::Point3f& b)
@@ -632,7 +663,24 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints(
         tr.curr2D = currPts[k];
         tr.prev3D = prev3D;
         tr.curr3D = curr3D;
-        tr.flow3D = curr3D - prev3D;
+        // In ClusterPoints, after computing flow3D for each track,
+        // subtract the expected background flow using camera motion
+        // Egomotion Compensation 
+        Sophus::SE3f Trel = mCurrentFrame.GetPose() * mLastFrame.GetPose().inverse();
+        Eigen::Vector3f t_rel = Trel.translation();
+        Eigen::Matrix3f R_rel = Trel.rotationMatrix();
+
+        // For each track, compute expected flow if point were static
+        //cv::Point3f prev3D = tr.prev3D;
+        Eigen::Vector3f Pw(tr.prev3D.x, tr.prev3D.y, tr.prev3D.z);
+        Eigen::Vector3f Pc_curr = R_rel * Pw + t_rel;
+
+        cv::Point3f expected_curr(Pc_curr.x(), Pc_curr.y(), Pc_curr.z());
+        cv::Point3f ego_flow = expected_curr - prev3D;
+
+        // Subtract ego motion from observed flow
+        tr.flow3D = (tr.curr3D - tr.prev3D) - ego_flow;
+        //tr.flow3D = curr3D - prev3D;
         tracks.push_back(tr);
     }
 

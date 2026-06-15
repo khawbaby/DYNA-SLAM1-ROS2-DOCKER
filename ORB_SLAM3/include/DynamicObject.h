@@ -58,6 +58,10 @@ public:
 public:
     DynamicObject(int _id);
     
+    DynamicObject(const DynamicObject& other);
+    
+    DynamicObject& operator=(const DynamicObject& other);
+    
     float ComputeIoU(const cv::Rect& a, const cv::Rect& b);
 
     void Update(const std::vector<cv::Point3f>& newPoints,

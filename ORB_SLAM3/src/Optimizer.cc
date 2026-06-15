@@ -1367,6 +1367,15 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     // ----------------------------------------------------------------
     // CREATE OBJECT VERTICES
     // ----------------------------------------------------------------
+    if(!prevFrame)
+        return nInitialCorrespondences;
+
+    if(pFrame->mDynamicObjects.empty())
+        return nInitialCorrespondences;
+
+    if(prevFrame->mDynamicObjects.empty())
+        return nInitialCorrespondences;
+
     std::map<int, VertexObject*> currObjVertices;
     std::map<int, VertexObject*> prevObjVertices;
 
@@ -1523,9 +1532,10 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         }
 
         if(!obj.T_obj.matrix().allFinite()) continue;
-        
+
         int N = std::min(obj.points2D.size(), obj.points3D_local.size());
-        if(N < 3) continue;
+        if(N < 8) continue;
+        if(obj.tracked_frames < 2) continue;
 
         for(int i = 0; i < N; i++)
         {
@@ -1542,7 +1552,10 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
             e->X_obj = X_obj;
             e->setMeasurement(obs);
             e->pCamera = pFrame->mpCamera;
-            e->setInformation(0.25 * Eigen::Matrix2d::Identity());
+            // In motion edge setup:
+            float vel_confidence = std::min((float)obj.tracked_frames / 5.0f, 1.0f);
+            e->setInformation(vel_confidence * 0.1 * Eigen::Matrix2d::Identity());
+            //e->setInformation(0.25 * Eigen::Matrix2d::Identity());
 
             g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
             e->setRobustKernel(rk);
@@ -1558,6 +1571,11 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     const float chi2Mono[4]={5.991,5.991,5.991,5.991};
     const float chi2Stereo[4]={7.815,7.815,7.815, 7.815};
     const int its[4]={10,10,10,10};    
+
+    std::cout
+    << "Vertices: " << optimizer.vertices().size()
+    << " Edges: " << optimizer.edges().size()
+    << std::endl;
 
     int nBad=0;
     for(size_t it=0; it<4; it++)
@@ -1666,7 +1684,24 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
     Sophus::SE3<float> pose(SE3quat_recov.rotation().cast<float>(),
             SE3quat_recov.translation().cast<float>());
     pFrame->SetPose(pose);
+    
+    // After Pass 2 writeback in Optimizer:
+    for(auto& obj : pFrame->mDynamicObjects)
+    {
+        auto it = currObjVertices.find(obj.id);
+        if(it == currObjVertices.end()) continue;
 
+        Sophus::SE3d refined = it->second->estimate();
+        obj.T_obj = refined;
+
+        // Update centroid from refined pose
+        obj.centroid3D.x = (float)refined.translation().x();
+        obj.centroid3D.y = (float)refined.translation().y();
+        obj.centroid3D.z = (float)refined.translation().z();
+
+        // KF measurement update with refined centroid (more accurate than raw)
+        obj.UpdateKalmanFilter(obj.centroid3D);
+    }
     return nInitialCorrespondences-nBad;
 }
 

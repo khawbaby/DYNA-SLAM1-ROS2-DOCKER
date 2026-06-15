@@ -2067,9 +2067,15 @@ void Tracking::Track()
     if (mLastFrame.mImGrayLast.empty() || mLastFrame.mvDynamicKeys.empty() || mCurrentFrame.mvDynamicKeys.empty())
         empty_vect = true;
     
+    if (mState==4 || mState==3) {
+        std::cout << "Resetting ID" << std::endl;
+        mpDynamicTracker->next_id = 0;
+        mpDynamicTracker->onTrackingLost = true;
+    }
+
     // std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
     // std::cout << "LAST FRAME DYNAMIC KEYS: " << mLastFrame.mvDynamicKeys.size() << std::endl;
-    if (!empty_vect) {
+    if (!empty_vect && mState!=4 && mState!=3 && mLastProcessedState!=4 && mLastProcessedState!=3) {
         std::vector<uchar> status;
         std::vector<float> err;
         
@@ -2078,58 +2084,26 @@ void Tracking::Track()
             prevPts.push_back(mLastFrame.mvDynamicKeys[i].pt);
         }
 
-        //std::cout << "LAST FRAME IMG ROWS: " << mLastFrame.mImGrayLast.rows << std::endl;
-        
-        // cv::calcOpticalFlowPyrLK(
-        //     mLastFrame.mImGrayLast, mCurrentFrame.mImGray,
-        //     prevPts, currPts,
-        //     status, err
-        // );
-        
-        // std::cout << "status size: " << status.size() << std::endl;
-        // std::cout << "last frame dynamic size: " << mLastFrame.N_dynamic << std::endl;
-
         // 3D Correspondeces (Tracked Pairs)
         std::vector<std::pair<cv::Point3f, cv::Point3f>> dyn_kp_matches;
         std::vector<std::pair<int, int>> idx_matches;
+
+        // Check both frames are valid and from the same map session
         if (!mLastFrame.mImGrayLast.empty() && 
             !mLastFrame.mvDynamicKeys.empty() && 
-            !mCurrentFrame.mvDynamicKeys.empty())
+            !mCurrentFrame.mvDynamicKeys.empty() &&
+            mLastFrame.mnId > 0 &&
+            mCurrentFrame.mnId > 0 &&
+            mCurrentFrame.mnId > mLastFrame.mnId &&           // frames are sequential
+            (mCurrentFrame.mnId - mLastFrame.mnId) < 10)      // no big gap (map reset gap)
         {
-            mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, {}, {});  
+            try {
+                mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, {}, {});
+            } catch(const std::exception& e) {
+                std::cerr << "[DynTracker] Exception: " << e.what() << std::endl;
+                mpDynamicTracker->Reset();
+            }
         }
-        
-        // for(int k = 0; k < mLastFrame.N_dynamic; k++)
-        // {
-        //     // Cant find this point in curr Frame from optical flow
-        //     if(!status[k]) continue;
-        //     std::cout << "hi1" << endl;
-        //     // find nearest keypoint in current frame
-        //     int idx_curr = -1;
-        //     float bestDist = 5.0f;
-
-        //     for(int i = 0; i < mCurrentFrame.N_dynamic; i++)
-        //     {
-    
-        //         float dist = cv::norm(mCurrentFrame.mvDynamicKeys[i].pt - currPts[k]);
-
-        //         if(dist < bestDist)
-        //         {
-        //             bestDist = dist;
-        //             idx_curr = i;
-        //         }
-        //     }
-
-        //     if(idx_curr < 0) continue;
-
-        //     // already a pair with tracked correspondence (prev, curr)
-        //     dyn_kp_matches.emplace_back(mLastFrame.mvDynamicPoints3D[k], mCurrentFrame.mvDynamicPoints3D[idx_curr]);
-        //     idx_matches.emplace_back(k, idx_curr);
-        // }
-        
-        // if (dyn_kp_matches.size() == idx_matches.size()) {
-        //     mpDynamicTracker->ProcessFrame(mCurrentFrame, mLastFrame, idx_matches, dyn_kp_matches);
-        // }
 
     }
 
@@ -3047,6 +3021,11 @@ void Tracking::CreateMapInAtlas()
     mCurrentFrame = Frame();
     mvIniMatches.clear();
 
+    mpDynamicTracker->Reset();
+
+    mLastFrame.mDynamicObjects.clear();
+    mCurrentFrame.mDynamicObjects.clear();
+    
     mbCreatedMap = true;
 }
 
@@ -3070,6 +3049,12 @@ void Tracking::CheckReplacedInLastFrame()
 
 bool Tracking::TrackReferenceKeyFrame()
 {
+    if(mCurrentFrame.N == 0 || !mpReferenceKF)
+    {
+        std::cerr << "[TrackRefKF] Invalid frame or null reference KF, skipping" << std::endl;
+        return false;
+    }
+
     // Compute Bag of Words vector
     mCurrentFrame.ComputeBoW();
 
@@ -3079,7 +3064,7 @@ bool Tracking::TrackReferenceKeyFrame()
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
-
+    
     if(nmatches<15)
     {
         cout << "TRACK_REF_KF: Less than 15 matches!!\n";
@@ -3092,9 +3077,12 @@ bool Tracking::TrackReferenceKeyFrame()
     //mCurrentFrame.PrintPointDistribution();
 
 
-    if(mLastFrame.mDynamicObjects.empty() || mCurrentFrame.mDynamicObjects.empty())
+    if(mLastFrame.mDynamicObjects.empty() || mCurrentFrame.mDynamicObjects.empty() || mLastProcessedState==4 || mLastProcessedState==3)
     {
         // skip dynamic optimization, run standard PoseOptimization
+        if (mLastProcessedState==4 || mLastProcessedState==3) {
+            std::cout << "TrackReferenceKeyFrame: skip dynamic optimization, run standard PoseOptimization" << std::endl;   
+        }
         nmatches = Optimizer::PoseOptimization(&mCurrentFrame);
     }
     else
@@ -3213,6 +3201,14 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
+    if(mCurrentFrame.N == 0)
+    {
+        std::cerr << "[TrackMotionModel] Empty frame, skipping" << std::endl;
+        if(mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+            return true;
+        return false;
+    }
+
     ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
@@ -3321,6 +3317,12 @@ bool Tracking::TrackLocalMap()
     // We have an estimation of the camera pose and some map points tracked in the frame.
     // We retrieve the local map and try to find matches to points in the local map.
     mTrackedFr++;
+
+    if(mCurrentFrame.N == 0)
+    {
+        std::cerr << "[TrackLocalMap] Empty frame, skipping" << std::endl;
+        return false;
+    }
 
     UpdateLocalMap();
     SearchLocalPoints();
@@ -4294,6 +4296,8 @@ void Tracking::ResetActiveMap(bool bLocMap)
     mvIniMatches.clear();
 
     mbVelocity = false;
+
+    mpDynamicTracker->Reset(); 
 
     if(mpViewer)
         mpViewer->Release();

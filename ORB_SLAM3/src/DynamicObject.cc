@@ -27,6 +27,56 @@ DynamicObject::DynamicObject(int _id)
     R = cv::Mat::eye(3, 3, CV_32F);
 }
 
+
+// DynamicObject.cc — implement it
+DynamicObject::DynamicObject(const DynamicObject& other)
+    : id(other.id)
+    , centroid3D(other.centroid3D)
+    , velocity(other.velocity)
+    , bbox(other.bbox)
+    , T_obj(other.T_obj)
+    , kf_x(other.kf_x)
+    , kf_P(other.kf_P)
+    , kf_initialized(other.kf_initialized)
+    , missed_frames(other.missed_frames)
+    , tracked_frames(other.tracked_frames)
+    , has2DObservation(other.has2DObservation)
+    , points3D(other.points3D)
+    , points2D(other.points2D)
+    , points3D_local(other.points3D_local)
+{
+    // Deep copy cv::Mat members
+    axes        = other.axes.clone();
+    orientation = other.orientation.clone();
+}
+
+// DynamicObject.cc
+DynamicObject& DynamicObject::operator=(const DynamicObject& other)
+{
+    if(this == &other) return *this;
+    
+    id            = other.id;
+    centroid3D    = other.centroid3D;
+    velocity      = other.velocity;
+    bbox          = other.bbox;
+    T_obj         = other.T_obj;
+    kf_x          = other.kf_x;
+    kf_P          = other.kf_P;
+    kf_initialized = other.kf_initialized;
+    missed_frames  = other.missed_frames;
+    tracked_frames = other.tracked_frames;
+    has2DObservation = other.has2DObservation;
+    points3D      = other.points3D;
+    points2D      = other.points2D;
+    points3D_local = other.points3D_local;
+    
+    // Deep copy cv::Mat members
+    axes        = other.axes.clone();
+    orientation = other.orientation.clone();
+    
+    return *this;
+}
+
 // ----------------------------------------------------------------
 // KALMAN FILTER
 // ----------------------------------------------------------------

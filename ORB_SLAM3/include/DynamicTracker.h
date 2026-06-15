@@ -1,5 +1,5 @@
 #pragma once
-
+    
 #include "DynamicObject.h"
 #include <vector>
 #include <queue>
@@ -68,7 +68,7 @@ public:
         const std::vector<std::pair<int,int>>& _dynamicMatchesIndex
     );
 
-    
+    void Reset();
 
 private:
     Hungarian hungarian_solver;
