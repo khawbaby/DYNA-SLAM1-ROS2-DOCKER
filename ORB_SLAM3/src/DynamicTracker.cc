@@ -73,8 +73,8 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
     if(mLastFrame.mImGrayLast.empty()) return;
     
     std::vector<std::vector<int>> clusters;
-    std::vector<DynamicObject> CurrentObjects;
-    std::vector<DynamicObject> PrevObjects;
+    std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> CurrentObjects;
+    std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> PrevObjects;
 
     clusters = ClusterPoints(mCurrentFrame, mLastFrame);
 
@@ -272,7 +272,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
 
             std::vector<int> assignment = hungarian_solver.solve(costMatrix);
             std::vector<bool> used(M, false);
-            std::vector<DynamicObject> alignedObjects;
+            std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> alignedObjects;
 
             for(int it = 0; it < (int)assignment.size(); it++)
             {
@@ -291,8 +291,9 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
                         Eigen::Matrix<float,6,6> F = Eigen::Matrix<float,6,6>::Identity();
                         F(0,3) = 1; F(1,4) = 1; F(2,5) = 1;
 
-                        Eigen::Matrix<float,6,6> Q =
-                            Eigen::Matrix<float,6,6>::Identity() * 0.01f;
+                        Eigen::Matrix<float,6,6> Q = Eigen::Matrix<float,6,6>::Zero();
+                        Q(0,0) = 0.001f; Q(1,1) = 0.001f; Q(2,2) = 0.001f;
+                        Q(3,3) = 0.05f;  Q(4,4) = 0.05f;  Q(5,5) = 0.05f;
 
                         obj.kf_x = F * obj.kf_x;
                         obj.kf_P = F * obj.kf_P * F.transpose() + Q;
@@ -366,7 +367,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
         else
         {
             // [0,1] — no prev objects, all current are new
-            std::vector<DynamicObject> alignedObjects;
+            std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> alignedObjects;
             for(int j = 0; j < (int)CurrentObjects.size(); j++)
             {
                 DynamicObject obj = CurrentObjects[j];
@@ -385,7 +386,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
         if(PrevObjects.size() > 0)
         {
             // Prediction-only mode
-            std::vector<DynamicObject> predictedObjects;
+            std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> predictedObjects;
 
             for(auto& prev : PrevObjects)
             {
@@ -400,8 +401,9 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
                     Eigen::Matrix<float,6,6> F = Eigen::Matrix<float,6,6>::Identity();
                     F(0,3) = 1; F(1,4) = 1; F(2,5) = 1;
 
-                    Eigen::Matrix<float,6,6> Q =
-                        Eigen::Matrix<float,6,6>::Identity() * 0.01f;
+                    Eigen::Matrix<float,6,6> Q = Eigen::Matrix<float,6,6>::Zero();
+                    Q(0,0) = 0.001f; Q(1,1) = 0.001f; Q(2,2) = 0.001f;
+                    Q(3,3) = 0.05f;  Q(4,4) = 0.05f;  Q(5,5) = 0.05f;
 
                     obj.kf_x = F * obj.kf_x;
                     obj.kf_P = F * obj.kf_P * F.transpose() + Q;
@@ -686,8 +688,8 @@ std::vector<std::vector<int>> DynamicTracker::ClusterPoints(
 
     if(tracks.empty()) return clusters;
 
-    const float SPATIAL_THRESH = 1.2f;
-    const float MOTION_THRESH  = 0.6f;
+    const float SPATIAL_THRESH = 0.6f;
+    const float MOTION_THRESH  = 0.4f;
     const int   MIN_CLUSTER    = 3;
 
     std::vector<bool> visited(tracks.size(), false);

@@ -371,8 +371,13 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     mvKeys = _mvKeys;
     mDescriptors = _mDescriptors;
-    mvDynamicKeys = _mvDynamicKeys; 
+    mvDynamicKeys = _mvDynamicKeys;
     mDynamicDescriptors = _mDynamicDescriptors;
+
+    // Rebuild mvbDynamic for the filtered key set. Every key that survived the
+    // mask filter is static by definition — the old vector was sized for the
+    // pre-filter N and its indices no longer correspond to the new mvKeys.
+    mvbDynamic = std::vector<bool>(mvKeys.size(), false);
     // cv::KeyPoint kp;
     // int idx = 0;
     // for(int y = 0; y < mDynamicMask.rows; y++)

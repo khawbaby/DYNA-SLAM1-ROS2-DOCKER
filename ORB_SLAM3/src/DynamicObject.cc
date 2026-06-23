@@ -28,52 +28,74 @@ DynamicObject::DynamicObject(int _id)
 }
 
 
-// DynamicObject.cc — implement it
 DynamicObject::DynamicObject(const DynamicObject& other)
     : id(other.id)
-    , centroid3D(other.centroid3D)
-    , velocity(other.velocity)
-    , bbox(other.bbox)
-    , T_obj(other.T_obj)
+    , age(other.age)
+    , isActive(other.isActive)
+    , missed_frames(other.missed_frames)
+    , tracked_frames(other.tracked_frames)
     , kf_x(other.kf_x)
     , kf_P(other.kf_P)
     , kf_initialized(other.kf_initialized)
-    , missed_frames(other.missed_frames)
-    , tracked_frames(other.tracked_frames)
-    , has2DObservation(other.has2DObservation)
-    , points3D(other.points3D)
-    , points2D(other.points2D)
+    , R_eigen(other.R_eigen)
+    , T_obj(other.T_obj)
     , points3D_local(other.points3D_local)
+    , points2D(other.points2D)
+    , points3D(other.points3D)
+    , prevPoints3D(other.prevPoints3D)
+    , ellipsoidPoints(other.ellipsoidPoints)
+    , ellipsoidPointsLocal(other.ellipsoidPointsLocal)
+    , bbox(other.bbox)
+    , t(other.t)
+    , centroid2D(other.centroid2D)
+    , velocity2D(other.velocity2D)
+    , centroid3D(other.centroid3D)
+    , prevCentroid3D(other.prevCentroid3D)
+    , velocity(other.velocity)
+    , axes3D(other.axes3D)
+    , has2DObservation(other.has2DObservation)
 {
-    // Deep copy cv::Mat members
+    R           = other.R.clone();
     axes        = other.axes.clone();
     orientation = other.orientation.clone();
+    center      = other.center.clone();
 }
 
-// DynamicObject.cc
 DynamicObject& DynamicObject::operator=(const DynamicObject& other)
 {
     if(this == &other) return *this;
-    
-    id            = other.id;
-    centroid3D    = other.centroid3D;
-    velocity      = other.velocity;
-    bbox          = other.bbox;
-    T_obj         = other.T_obj;
-    kf_x          = other.kf_x;
-    kf_P          = other.kf_P;
-    kf_initialized = other.kf_initialized;
-    missed_frames  = other.missed_frames;
-    tracked_frames = other.tracked_frames;
+
+    id               = other.id;
+    age              = other.age;
+    isActive         = other.isActive;
+    missed_frames    = other.missed_frames;
+    tracked_frames   = other.tracked_frames;
+    kf_x             = other.kf_x;
+    kf_P             = other.kf_P;
+    kf_initialized   = other.kf_initialized;
+    R_eigen          = other.R_eigen;
+    T_obj            = other.T_obj;
+    points3D_local   = other.points3D_local;
+    points2D         = other.points2D;
+    points3D         = other.points3D;
+    prevPoints3D     = other.prevPoints3D;
+    ellipsoidPoints  = other.ellipsoidPoints;
+    ellipsoidPointsLocal = other.ellipsoidPointsLocal;
+    bbox             = other.bbox;
+    t                = other.t;
+    centroid2D       = other.centroid2D;
+    velocity2D       = other.velocity2D;
+    centroid3D       = other.centroid3D;
+    prevCentroid3D   = other.prevCentroid3D;
+    velocity         = other.velocity;
+    axes3D           = other.axes3D;
     has2DObservation = other.has2DObservation;
-    points3D      = other.points3D;
-    points2D      = other.points2D;
-    points3D_local = other.points3D_local;
-    
-    // Deep copy cv::Mat members
+
+    R           = other.R.clone();
     axes        = other.axes.clone();
     orientation = other.orientation.clone();
-    
+    center      = other.center.clone();
+
     return *this;
 }
 
@@ -101,7 +123,11 @@ void DynamicObject::UpdateKalmanFilter(const cv::Point3f& measuredCentroid)
     Eigen::Matrix<float,6,6> F = Eigen::Matrix<float,6,6>::Identity();
     F(0,3) = 1; F(1,4) = 1; F(2,5) = 1;
 
-    Eigen::Matrix<float,6,6> Q = Eigen::Matrix<float,6,6>::Identity() * 0.01f;
+    // Tighter process noise on position (driven by velocity), looser on
+    // velocity (can accelerate freely between frames at ~30 Hz).
+    Eigen::Matrix<float,6,6> Q = Eigen::Matrix<float,6,6>::Zero();
+    Q(0,0) = 0.001f; Q(1,1) = 0.001f; Q(2,2) = 0.001f;
+    Q(3,3) = 0.05f;  Q(4,4) = 0.05f;  Q(5,5) = 0.05f;
 
     kf_x = F * kf_x;
     kf_P = F * kf_P * F.transpose() + Q;
@@ -283,7 +309,10 @@ void DynamicObject::FitEllipsoid()
         center.at<float>(2)
     );
 
-    T_obj = Sophus::SE3d(R_fixed, t_d);
+    // Use identity rotation — PCA orientation on few optical-flow points is too
+    // noisy to use in the optimizer. The centroid translation is all we need for
+    // stable motion constraints and reprojection edges.
+    T_obj = Sophus::SE3d(Eigen::Matrix3d::Identity(), t_d);
 
     RebuildEllipsoidPoints();
 }
@@ -345,7 +374,7 @@ void DynamicObject::UpdatePoseFromState()
     }
 
     Eigen::Vector3d t(centroid3D.x, centroid3D.y, centroid3D.z);
-    T_obj = Sophus::SE3d(R_fixed, t);
+    T_obj = Sophus::SE3d(Eigen::Matrix3d::Identity(), t);
 
     RebuildEllipsoidPoints();
 }

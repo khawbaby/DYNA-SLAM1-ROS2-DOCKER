@@ -239,7 +239,7 @@ public:
     std::vector<cv::KeyPoint> mvDynamicKeys, mvDynamicKeysRight;
     std::vector<cv::KeyPoint> mvDynamicKeysUn;
     std::vector<cv::Point3f> mvDynamicPoints3D;
-    std::vector<DynamicObject> mDynamicObjects;
+    std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> mDynamicObjects;
 
     // Corresponding stereo coordinate and depth for each keypoint.
     std::vector<MapPoint*> mvpMapPoints;

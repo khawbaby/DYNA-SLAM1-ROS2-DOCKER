@@ -2745,6 +2745,14 @@ void Tracking::StereoInitialization()
 
         //cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << endl;
 
+        // Compute BoW before handing pKFini to LocalMapper.
+        // LocalMapping::ProcessNewKeyFrame also calls ComputeBoW on the same KF.
+        // DynaSLAM's heavier Frame copy (mDynamicMask, mDynamicObjects, mDynamicGrid)
+        // widens the race window enough that both threads concurrently write mBowVec,
+        // corrupting the heap and producing "malloc(): unaligned fastbin chunk detected".
+        // After this call, LM's ComputeBoW becomes a no-op (mBowVec already populated).
+        pKFini->ComputeBoW();
+
         mpLocalMapper->InsertKeyFrame(pKFini);
 
         mLastFrame = Frame(mCurrentFrame);
@@ -2902,16 +2910,21 @@ void Tracking::CreateInitialMapMonocular()
 
     // Bundle Adjustment
     Verbose::PrintMess("New Map created with " + to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
+    std::cout << "[INIT] before GlobalBA" << std::endl;
     Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(),20);
+    std::cout << "[INIT] after GlobalBA" << std::endl;
 
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
+    std::cout << "[INIT] medianDepth=" << medianDepth << std::endl;
     float invMedianDepth;
     if(mSensor == System::IMU_MONOCULAR)
         invMedianDepth = 4.0f/medianDepth; // 4.0f
     else
         invMedianDepth = 1.0f/medianDepth;
 
-    if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
+    int nTrackedMapPoints = pKFcur->TrackedMapPoints(1);
+    std::cout << "[INIT] TrackedMapPoints=" << nTrackedMapPoints << std::endl;
+    if(medianDepth<0 || nTrackedMapPoints<50) // TODO Check, originally 100 tracks
     {
         Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_QUIET);
         mpSystem->ResetActiveMap();

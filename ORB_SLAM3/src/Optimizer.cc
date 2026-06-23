@@ -63,10 +63,21 @@ void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopF
 void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP,
                                  int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
 {
+    if(vpKFs.empty())
+    {
+        Verbose::PrintMess("BA: no keyframes, skipping", Verbose::VERBOSITY_NORMAL);
+        return;
+    }
+
     vector<bool> vbNotIncludedMP;
     vbNotIncludedMP.resize(vpMP.size());
 
     Map* pMap = vpKFs[0]->GetMap();
+    if(!pMap)
+    {
+        Verbose::PrintMess("BA: null map, skipping", Verbose::VERBOSITY_NORMAL);
+        return;
+    }
 
     g2o::SparseOptimizer optimizer;
     g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
@@ -284,6 +295,8 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
     Verbose::PrintMess("BA: End of the optimization", Verbose::VERBOSITY_NORMAL);
 
     // Recover optimized data
+    KeyFrame* pOriginKF = pMap->GetOriginKF();
+
     //Keyframes
     for(size_t i=0; i<vpKFs.size(); i++)
     {
@@ -291,9 +304,10 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
         if(pKF->isBad())
             continue;
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF->mnId));
+        if(!vSE3) continue;
 
         g2o::SE3Quat SE3quat = vSE3->estimate();
-        if(nLoopKF==pMap->GetOriginKF()->mnId)
+        if(pOriginKF && nLoopKF==pOriginKF->mnId)
         {
             pKF->SetPose(Sophus::SE3f(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>()));
         }
@@ -378,8 +392,9 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
         if(pMP->isBad())
             continue;
         g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
+        if(!vPoint) continue;
 
-        if(nLoopKF==pMap->GetOriginKF()->mnId)
+        if(pOriginKF && nLoopKF==pOriginKF->mnId)
         {
             pMP->SetWorldPos(vPoint->estimate().cast<float>());
             pMP->UpdateNormalAndDepth();
@@ -1447,68 +1462,10 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         vpEdgesMotion.push_back(e);
     }
 
-    // ----------------------------------------------------------------
-    // ELLIPSOID SHAPE CONSISTENCY EDGES (prev obj <-> curr obj)
-    // ----------------------------------------------------------------
-    const int ELLIPSOID_STEPS = 4;
-
-    for(auto& curr : pFrame->mDynamicObjects)
-    {
-        auto it_prev = std::find_if(
-            prevFrame->mDynamicObjects.begin(),
-            prevFrame->mDynamicObjects.end(),
-            [&](const DynamicObject& o){ return o.id == curr.id; }
-        );
-
-        if(it_prev == prevFrame->mDynamicObjects.end()) continue;
-
-        const DynamicObject& prev = *it_prev;
-
-        if(cv::norm(curr.centroid3D - prev.centroid3D) > 2.0f) continue;
-        if(curr.points3D.size() < 10) continue;
-
-        auto itP = prevObjVertices.find(prev.id);
-        auto itC = currObjVertices.find(curr.id);
-        if(itP == prevObjVertices.end() || itC == currObjVertices.end()) continue;
-
-        Eigen::Vector3d axes_prev(
-            prev.axes.at<float>(0,0),
-            prev.axes.at<float>(1,0),
-            prev.axes.at<float>(2,0)
-        );
-
-        Eigen::Vector3d axes_curr(
-            curr.axes.at<float>(0,0),
-            curr.axes.at<float>(1,0),
-            curr.axes.at<float>(2,0)
-        );
-
-        for(int i = 0; i < ELLIPSOID_STEPS; i++)
-        {
-            float theta = CV_PI * (i + 0.5f) / ELLIPSOID_STEPS;
-
-            for(int j = 0; j < ELLIPSOID_STEPS; j++)
-            {
-                float phi = 2.0f * CV_PI * j / ELLIPSOID_STEPS;
-
-                EdgeEllipsoidRigid* e = new EdgeEllipsoidRigid();
-                e->setVertex(0, itP->second);
-                e->setVertex(1, itC->second);
-                e->theta     = theta;
-                e->phi       = phi;
-                e->axes_prev = axes_prev;
-                e->axes_curr = axes_curr;
-                e->setMeasurement(Eigen::Vector3d::Zero());
-                e->setInformation(0.01 * Eigen::Matrix3d::Identity());
-
-                g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                e->setRobustKernel(rk);
-                rk->setDelta(4.0);
-
-                optimizer.addEdge(e);
-            }
-        }
-    }
+    // ELLIPSOID SHAPE CONSISTENCY EDGES — disabled.
+    // PCA axes from optical-flow points are too noisy (eigenvector directions
+    // can flip between frames). These constraints add contradictory information
+    // to the optimizer and degrade ATE vs centroid-only tracking.
 
     // ----------------------------------------------------------------
     // REPROJECTION EDGES (camera <-> curr obj points)
@@ -1552,10 +1509,12 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
             e->X_obj = X_obj;
             e->setMeasurement(obs);
             e->pCamera = pFrame->mpCamera;
-            // In motion edge setup:
-            float vel_confidence = std::min((float)obj.tracked_frames / 5.0f, 1.0f);
-            e->setInformation(vel_confidence * 0.1 * Eigen::Matrix2d::Identity());
-            //e->setInformation(0.25 * Eigen::Matrix2d::Identity());
+            // Ramp information weight from 0 → 0.5 over 10 frames.
+            // Below 0.1 the edges are too weak to move either vertex; above
+            // 0.5 noisy object points start pulling the camera pose away from
+            // the static-point reprojection edges.
+            float vel_confidence = std::min((float)obj.tracked_frames / 10.0f, 1.0f);
+            e->setInformation(vel_confidence * 0.5 * Eigen::Matrix2d::Identity());
 
             g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
             e->setRobustKernel(rk);
@@ -1685,7 +1644,10 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
             SE3quat_recov.translation().cast<float>());
     pFrame->SetPose(pose);
     
-    // After Pass 2 writeback in Optimizer:
+    // Writeback optimizer-refined pose into object state.
+    // Do NOT call UpdateKalmanFilter here — it was already called in
+    // UpdateFromMeasurement this frame. A second update would treat the
+    // optimizer output as an independent measurement, corrupting KF state.
     for(auto& obj : pFrame->mDynamicObjects)
     {
         auto it = currObjVertices.find(obj.id);
@@ -1694,13 +1656,15 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
         Sophus::SE3d refined = it->second->estimate();
         obj.T_obj = refined;
 
-        // Update centroid from refined pose
         obj.centroid3D.x = (float)refined.translation().x();
         obj.centroid3D.y = (float)refined.translation().y();
         obj.centroid3D.z = (float)refined.translation().z();
 
-        // KF measurement update with refined centroid (more accurate than raw)
-        obj.UpdateKalmanFilter(obj.centroid3D);
+        // Backfill the KF state so velocity estimates stay consistent with
+        // the refined centroid without running the full measurement update.
+        obj.kf_x(0) = obj.centroid3D.x;
+        obj.kf_x(1) = obj.centroid3D.y;
+        obj.kf_x(2) = obj.centroid3D.z;
     }
     return nInitialCorrespondences-nBad;
 }

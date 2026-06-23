@@ -801,6 +801,9 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
         }
     }
 
+    if(vDepths.empty())
+        return -1.0f;
+
     sort(vDepths.begin(),vDepths.end());
 
     return vDepths[(vDepths.size()-1)/q];
