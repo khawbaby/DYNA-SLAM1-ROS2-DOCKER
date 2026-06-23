@@ -1492,7 +1492,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
 
         int N = std::min(obj.points2D.size(), obj.points3D_local.size());
         if(N < 8) continue;
-        if(obj.tracked_frames < 2) continue;
+        if(obj.tracked_frames < 5) continue;
 
         for(int i = 0; i < N; i++)
         {
@@ -1509,12 +1509,14 @@ int Optimizer::PoseOptimization(Frame *pFrame, Frame* prevFrame)
             e->X_obj = X_obj;
             e->setMeasurement(obs);
             e->pCamera = pFrame->mpCamera;
+            e->fx = pFrame->fx;
+            e->fy = pFrame->fy;
             // Ramp information weight from 0 → 0.5 over 10 frames.
             // Below 0.1 the edges are too weak to move either vertex; above
             // 0.5 noisy object points start pulling the camera pose away from
             // the static-point reprojection edges.
             float vel_confidence = std::min((float)obj.tracked_frames / 10.0f, 1.0f);
-            e->setInformation(vel_confidence * 0.5 * Eigen::Matrix2d::Identity());
+            e->setInformation(vel_confidence * 0.3 * Eigen::Matrix2d::Identity());
 
             g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
             e->setRobustKernel(rk);

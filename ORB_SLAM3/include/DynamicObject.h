@@ -39,9 +39,17 @@ public:
 
     cv::Mat R;  // rotation
     cv::Mat axes;        // 3x1
-    cv::Mat orientation; // 3x3
+    cv::Mat orientation; // 3x3  (rows = principal eigenvectors)
     cv::Mat center;      // 3x1 (optional, same as centroid)
     cv::Vec3f t; // translation
+
+    // Accumulated centroid-relative points from recent frames for stable PCA
+    std::vector<cv::Point3f> pointsHistoryBuffer;
+    static const int MAX_HISTORY_POINTS = 150;
+
+    // Previous frame eigenvectors for sign-flip correction
+    Eigen::Matrix3d prevOrientEigen;
+    bool hasPrevOrient = false;
 
     cv::Point2f centroid2D;
     cv::Point2f velocity2D;

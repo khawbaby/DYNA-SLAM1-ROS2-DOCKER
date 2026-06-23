@@ -54,6 +54,9 @@ DynamicObject::DynamicObject(const DynamicObject& other)
     , velocity(other.velocity)
     , axes3D(other.axes3D)
     , has2DObservation(other.has2DObservation)
+    , pointsHistoryBuffer(other.pointsHistoryBuffer)
+    , prevOrientEigen(other.prevOrientEigen)
+    , hasPrevOrient(other.hasPrevOrient)
 {
     R           = other.R.clone();
     axes        = other.axes.clone();
@@ -90,6 +93,9 @@ DynamicObject& DynamicObject::operator=(const DynamicObject& other)
     velocity         = other.velocity;
     axes3D           = other.axes3D;
     has2DObservation = other.has2DObservation;
+    pointsHistoryBuffer = other.pointsHistoryBuffer;
+    prevOrientEigen  = other.prevOrientEigen;
+    hasPrevOrient    = other.hasPrevOrient;
 
     R           = other.R.clone();
     axes        = other.axes.clone();
@@ -167,39 +173,37 @@ void DynamicObject::UpdateKalmanFilter(const cv::Point3f& measuredCentroid)
 // ----------------------------------------------------------------
 void DynamicObject::UpdateFromMeasurement(const DynamicObject& meas, const DynamicObject& prev)
 {
-    // Geometry
-    points3D  = meas.points3D;
-    points2D  = meas.points2D;
-    bbox      = meas.bbox;
-    T_obj     = meas.T_obj;
+    // Geometry from measurement
+    points3D = meas.points3D;
+    points2D = meas.points2D;
+    bbox     = meas.bbox;
 
-    // Smooth axes — blend new measurement toward previous shape
-    if(!prev.axes.empty() && !meas.axes.empty())
+    // Carry history and orientation state forward from the tracked object
+    // so FitEllipsoid below runs on the full accumulated buffer
+    pointsHistoryBuffer = prev.pointsHistoryBuffer;
+    prevOrientEigen     = prev.prevOrientEigen;
+    hasPrevOrient       = prev.hasPrevOrient;
+
+    // Refit with accumulated history — produces stable orientation + axes
+    FitEllipsoid();
+
+    // Smooth axes magnitude (shape changes slowly)
+    if(!prev.axes.empty() && !axes.empty())
     {
-        axes = prev.axes.clone();
         for(int k = 0; k < 3; k++)
         {
-            float prev_val  = prev.axes.at<float>(k);
-            float meas_val  = meas.axes.at<float>(k);
-            float blended   = 0.3f * meas_val + 0.7f * prev_val;
+            float prev_val = prev.axes.at<float>(k);
+            float meas_val = axes.at<float>(k);
+            float blended  = 0.3f * meas_val + 0.7f * prev_val;
 
             float max_change = 0.2f * std::max(prev_val, 1e-4f);
             float diff       = blended - prev_val;
-
             if(std::abs(diff) > max_change)
                 blended = prev_val + std::copysign(max_change, diff);
 
             axes.at<float>(k) = blended;
         }
     }
-    else
-    {
-        axes = meas.axes.clone();
-    }
-
-    // Freeze orientation — humans rotate but ellipsoid orientation is noisy
-    orientation = prev.orientation.empty() ? meas.orientation.clone()
-                                           : prev.orientation.clone();
 
     // KF update — smooths centroid and estimates velocity
     UpdateKalmanFilter(meas.centroid3D);
@@ -208,7 +212,7 @@ void DynamicObject::UpdateFromMeasurement(const DynamicObject& meas, const Dynam
     missed_frames  = 0;
     tracked_frames = prev.tracked_frames + 1;
 
-    // Rebuild pose and ellipsoid points from updated state
+    // Rebuild T_obj with KF-refined centroid + stable orientation from FitEllipsoid
     UpdatePoseFromState();
 }
 
@@ -249,70 +253,83 @@ void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints,
 
 // ----------------------------------------------------------------
 // FIT ELLIPSOID
+// Accumulates centroid-relative points across frames so PCA runs on a
+// richer point cloud (150 pts max) instead of a single sparse frame.
+// Eigenvector sign-flip correction prevents orientation from jumping
+// when two eigenvalues are nearly equal.
 // ----------------------------------------------------------------
 void DynamicObject::FitEllipsoid()
 {
     if(points3D.size() < 5) return;
 
-    // Mean
-    cv::Mat mean = cv::Mat::zeros(3, 1, CV_32F);
-    for(auto& p : points3D)
-    {
-        mean.at<float>(0) += p.x;
-        mean.at<float>(1) += p.y;
-        mean.at<float>(2) += p.z;
-    }
-    mean /= (float)points3D.size();
+    // Compute centroid of current frame
+    cv::Point3f c(0, 0, 0);
+    for(auto& p : points3D) c += p;
+    c *= (1.0f / (float)points3D.size());
 
-    // Covariance
+    // Append centroid-relative current points to history buffer
+    for(auto& p : points3D)
+        pointsHistoryBuffer.emplace_back(p.x - c.x, p.y - c.y, p.z - c.z);
+    while((int)pointsHistoryBuffer.size() > MAX_HISTORY_POINTS)
+        pointsHistoryBuffer.erase(pointsHistoryBuffer.begin());
+
+    const auto& pts = pointsHistoryBuffer;
+    if(pts.size() < 5) return;
+
+    // Covariance on accumulated centroid-relative points
     cv::Mat cov = cv::Mat::zeros(3, 3, CV_32F);
-    for(auto& p : points3D)
+    for(auto& p : pts)
     {
-        cv::Mat pt   = (cv::Mat_<float>(3,1) << p.x, p.y, p.z);
-        cv::Mat diff = pt - mean;
-        cov += diff * diff.t();
+        cv::Mat pt = (cv::Mat_<float>(3,1) << p.x, p.y, p.z);
+        cov += pt * pt.t();
     }
-    cov /= (float)points3D.size();
+    cov /= (float)pts.size();
 
-    // Eigen decomposition
     cv::Mat eigenvalues, eigenvectors;
-    cv::eigen(cov, eigenvalues, eigenvectors);
+    cv::eigen(cov, eigenvalues, eigenvectors);  // rows = eigenvectors, descending λ
+
+    // Correct eigenvector sign flips vs previous frame
+    if(hasPrevOrient)
+    {
+        for(int k = 0; k < 3; k++)
+        {
+            Eigen::Vector3d ev_prev(prevOrientEigen(k,0),
+                                    prevOrientEigen(k,1),
+                                    prevOrientEigen(k,2));
+            Eigen::Vector3d ev_curr(eigenvectors.at<float>(k,0),
+                                    eigenvectors.at<float>(k,1),
+                                    eigenvectors.at<float>(k,2));
+            if(ev_prev.dot(ev_curr) < 0)
+                eigenvectors.row(k) *= -1;
+        }
+    }
 
     axes        = eigenvalues.clone();
     orientation = eigenvectors.clone();
-    center      = mean.clone();
-
+    center      = (cv::Mat_<float>(3,1) << c.x, c.y, c.z);
     cv::sqrt(axes, axes);
 
-    // Build SE3
+    // Build rotation: eigenvectors.t() has principal axes as columns
     cv::Mat R_cv = orientation.t();
+    Eigen::Matrix3d R_e;
+    cv::cv2eigen(R_cv, R_e);
 
-    Eigen::Matrix3d R_eigen;
-    cv::cv2eigen(R_cv, R_eigen);
-
-    Eigen::JacobiSVD<Eigen::Matrix3d> svd(
-        R_eigen, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-    Eigen::Matrix3d U = svd.matrixU();
-    Eigen::Matrix3d V = svd.matrixV();
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(R_e, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU(), V = svd.matrixV();
     Eigen::Matrix3d R_fixed = U * V.transpose();
+    if(R_fixed.determinant() < 0) { U.col(2) *= -1; R_fixed = U * V.transpose(); }
 
-    if(R_fixed.determinant() < 0)
+    // Store eigenvectors for next-frame flip detection
+    for(int k = 0; k < 3; k++)
     {
-        U.col(2) *= -1;
-        R_fixed = U * V.transpose();
+        prevOrientEigen(k,0) = eigenvectors.at<float>(k,0);
+        prevOrientEigen(k,1) = eigenvectors.at<float>(k,1);
+        prevOrientEigen(k,2) = eigenvectors.at<float>(k,2);
     }
+    hasPrevOrient = true;
 
-    Eigen::Vector3d t_d(
-        center.at<float>(0),
-        center.at<float>(1),
-        center.at<float>(2)
-    );
-
-    // Use identity rotation — PCA orientation on few optical-flow points is too
-    // noisy to use in the optimizer. The centroid translation is all we need for
-    // stable motion constraints and reprojection edges.
-    T_obj = Sophus::SE3d(Eigen::Matrix3d::Identity(), t_d);
+    Eigen::Vector3d t_d(c.x, c.y, c.z);
+    T_obj = Sophus::SE3d(R_fixed, t_d);
 
     RebuildEllipsoidPoints();
 }
@@ -350,31 +367,24 @@ void DynamicObject::RebuildEllipsoidPoints()
 
 // ----------------------------------------------------------------
 // UPDATE POSE FROM KALMAN STATE
+// Rebuilds T_obj using the KF-refined centroid and the orientation
+// computed by FitEllipsoid (now stable via accumulated PCA).
 // ----------------------------------------------------------------
 void DynamicObject::UpdatePoseFromState()
 {
     if(orientation.empty()) return;
 
     cv::Mat R_cv = orientation.t();
+    Eigen::Matrix3d R_e;
+    cv::cv2eigen(R_cv, R_e);
 
-    Eigen::Matrix3d R_eigen;
-    cv::cv2eigen(R_cv, R_eigen);
-
-    Eigen::JacobiSVD<Eigen::Matrix3d> svd(
-        R_eigen, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-    Eigen::Matrix3d U = svd.matrixU();
-    Eigen::Matrix3d V = svd.matrixV();
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(R_e, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU(), V = svd.matrixV();
     Eigen::Matrix3d R_fixed = U * V.transpose();
-
-    if(R_fixed.determinant() < 0)
-    {
-        U.col(2) *= -1;
-        R_fixed = U * V.transpose();
-    }
+    if(R_fixed.determinant() < 0) { U.col(2) *= -1; R_fixed = U * V.transpose(); }
 
     Eigen::Vector3d t(centroid3D.x, centroid3D.y, centroid3D.z);
-    T_obj = Sophus::SE3d(Eigen::Matrix3d::Identity(), t);
+    T_obj = Sophus::SE3d(R_fixed, t);
 
     RebuildEllipsoidPoints();
 }

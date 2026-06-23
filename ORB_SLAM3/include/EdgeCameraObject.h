@@ -22,11 +22,14 @@ public:
 
     EdgeCameraObject();
 
-    // 3D point in object frame (e.g. center or surface point)
+    // 3D point in object frame
     Eigen::Vector3d X_obj;
 
-    // camera model
+    // camera model (for computeError)
     GeometricCamera* pCamera;
+
+    // intrinsics for analytic Jacobian (pinhole)
+    double fx = 0, fy = 0;
 
     // core functions
     void computeError() override;
