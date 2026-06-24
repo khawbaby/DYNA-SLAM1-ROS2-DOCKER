@@ -1967,16 +1967,9 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         if(*pbStopFlag)
             return;
 
-    // Pre-filter: disable edges where the point is at non-positive initial depth.
-    // isDepthPositive() normally runs after optimize(10), but a single point
-    // with z<=0 produces J∝1/z → ∞ Jacobians that blow up the Hessian and
-    // cause Cholesky failure before outlier rejection can remove it.
-    for(auto e : vpEdgesMono)
-        if(!e->isDepthPositive()) e->setLevel(1);
-    for(auto e : vpEdgesBody)
-        if(!e->isDepthPositive()) e->setLevel(1);
-    for(auto e : vpEdgesStereo)
-        if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesMono)   if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesBody)   if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesStereo) if(!e->isDepthPositive()) e->setLevel(1);
 
     optimizer.initializeOptimization();
     optimizer.optimize(10);

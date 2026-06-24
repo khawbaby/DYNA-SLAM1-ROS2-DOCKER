@@ -126,11 +126,6 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
             cv::Point2f(maxx, maxy)
         );
 
-        // Skip zero-area cluster boxes (single collocated point or all same coordinate).
-        // These produce 0x0 bboxes that mask nothing and confuse Hungarian.
-        if(clusterBox.area() <= 0)
-            continue;
-
         float bestIoU = 0.0f;
         Detection bestDet;
 
@@ -219,9 +214,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
                 : PrevObjects[i].centroid3D;
 
             float dist     = cv::norm(CurrentObjects[j].centroid3D - predicted);
-            float sizeDiff = 0.0f;
-            if(!PrevObjects[i].axes.empty() && !CurrentObjects[j].axes.empty())
-                sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
+            float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
 
             dist_vect.push_back(dist);
             size_vect.push_back(sizeDiff);
@@ -263,9 +256,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
                         : PrevObjects[i].centroid3D;
 
                     float dist     = cv::norm(CurrentObjects[j].centroid3D - kf_predicted);
-                    float sizeDiff = 0.0f;
-                    if(!PrevObjects[i].axes.empty() && !CurrentObjects[j].axes.empty())
-                        sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
+                    float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
 
                     float d_score = (dist * dist) / (sigma_d * sigma_d);
                     float s_score = (sizeDiff * sizeDiff) / (sigma_s * sigma_s);
