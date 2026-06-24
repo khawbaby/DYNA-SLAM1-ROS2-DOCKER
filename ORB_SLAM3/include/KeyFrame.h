@@ -383,6 +383,7 @@ public:
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     std::vector<bool> mvbDynamic;
+    std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> mDynamicObjects;
     const cv::Mat mDescriptors;
 
     //BoW

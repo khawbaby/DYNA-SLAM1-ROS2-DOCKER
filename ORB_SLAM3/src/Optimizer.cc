@@ -1743,13 +1743,15 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         return;
     }
 
-    // Setup optimizer
+    // BlockSolverX: when Hessian is degenerate, Cholesky fails and g2o skips
+    // the bad update (protective). BlockSolver_6_3 succeeds on the same
+    // degenerate frames and applies a corrupted update — empirically worse ATE.
     g2o::SparseOptimizer optimizer;
-    g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+    g2o::BlockSolverX::LinearSolverType * linearSolver;
 
-    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
+    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
 
-    g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+    g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     if (pMap->IsInertial())
@@ -1964,6 +1966,17 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     if(pbStopFlag)
         if(*pbStopFlag)
             return;
+
+    // Pre-filter: disable edges where the point is at non-positive initial depth.
+    // isDepthPositive() normally runs after optimize(10), but a single point
+    // with z<=0 produces J∝1/z → ∞ Jacobians that blow up the Hessian and
+    // cause Cholesky failure before outlier rejection can remove it.
+    for(auto e : vpEdgesMono)
+        if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesBody)
+        if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesStereo)
+        if(!e->isDepthPositive()) e->setLevel(1);
 
     optimizer.initializeOptimization();
     optimizer.optimize(10);

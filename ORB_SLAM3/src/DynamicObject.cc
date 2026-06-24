@@ -178,11 +178,17 @@ void DynamicObject::UpdateFromMeasurement(const DynamicObject& meas, const Dynam
     points2D = meas.points2D;
     bbox     = meas.bbox;
 
-    // Carry history and orientation state forward from the tracked object
-    // so FitEllipsoid below runs on the full accumulated buffer
+    // Merge: start from prev's optical-flow history, then append the dense
+    // depth samples that SampleDepthPoints stored in meas before this call
     pointsHistoryBuffer = prev.pointsHistoryBuffer;
-    prevOrientEigen     = prev.prevOrientEigen;
-    hasPrevOrient       = prev.hasPrevOrient;
+    pointsHistoryBuffer.insert(pointsHistoryBuffer.end(),
+        meas.pointsHistoryBuffer.begin(),
+        meas.pointsHistoryBuffer.end());
+    while((int)pointsHistoryBuffer.size() > MAX_HISTORY_POINTS)
+        pointsHistoryBuffer.erase(pointsHistoryBuffer.begin());
+
+    prevOrientEigen = prev.prevOrientEigen;
+    hasPrevOrient   = prev.hasPrevOrient;
 
     // Refit with accumulated history — produces stable orientation + axes
     FitEllipsoid();
@@ -249,6 +255,60 @@ void DynamicObject::Update(const std::vector<cv::Point3f>& newPoints,
     points3D         = newPoints;
     points2D         = newPoints2D;
     has2DObservation = !points2D.empty();
+}
+
+// ----------------------------------------------------------------
+// SAMPLE DENSE DEPTH POINTS FROM BOUNDING BOX
+// Adds centroid-relative world-frame points directly into the history
+// buffer without touching points3D (optical flow points).  The dense
+// samples give FitEllipsoid 10-50× more data per frame for stable PCA.
+// ----------------------------------------------------------------
+void DynamicObject::SampleDepthPoints(
+    const cv::Mat& imDepth,
+    const Sophus::SE3<float>& Tcw,
+    float fx_, float fy_, float cx_, float cy_,
+    float maxDepth)
+{
+    if(imDepth.empty() || bbox.area() <= 0) return;
+
+    // Reference depth: centroid projected into camera frame
+    Eigen::Vector3f Xc_cen = Tcw * Eigen::Vector3f(centroid3D.x, centroid3D.y, centroid3D.z);
+    float refZ = Xc_cen.z();
+    if(refZ <= 0.1f) return;
+
+    Sophus::SE3f Twc = Tcw.inverse();
+
+    int x0 = std::max(bbox.x, 0);
+    int y0 = std::max(bbox.y, 0);
+    int x1 = std::min(bbox.x + bbox.width,  imDepth.cols - 1);
+    int y1 = std::min(bbox.y + bbox.height, imDepth.rows - 1);
+
+    const int STRIDE = 4;
+
+    for(int v = y0; v <= y1; v += STRIDE)
+    {
+        for(int u = x0; u <= x1; u += STRIDE)
+        {
+            float d = imDepth.at<float>(v, u);
+            if(d <= 0.1f || d > maxDepth) continue;
+            // Reject background pixels more than 0.8 m behind the centroid
+            if(std::abs(d - refZ) > 0.8f) continue;
+
+            Eigen::Vector3f Xc((u - cx_) * d / fx_,
+                               (v - cy_) * d / fy_,
+                               d);
+            Eigen::Vector3f Xw = Twc * Xc;
+
+            pointsHistoryBuffer.emplace_back(
+                Xw.x() - centroid3D.x,
+                Xw.y() - centroid3D.y,
+                Xw.z() - centroid3D.z
+            );
+        }
+    }
+
+    while((int)pointsHistoryBuffer.size() > MAX_HISTORY_POINTS)
+        pointsHistoryBuffer.erase(pointsHistoryBuffer.begin());
 }
 
 // ----------------------------------------------------------------

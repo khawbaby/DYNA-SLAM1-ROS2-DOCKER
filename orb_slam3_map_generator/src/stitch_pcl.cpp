@@ -37,6 +37,7 @@ public:
         callback_group_pc_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
         callback_group_map_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
         callback_group_service_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        callback_group_timer_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
         // Setup subscription options for each callback group
         rclcpp::SubscriptionOptions pc_sub_options;
@@ -54,6 +55,19 @@ public:
 
         this->declare_parameter("robot_base_frame", "base_footprint");
         this->get_parameter("robot_base_frame", robot_base_frame_id_);
+
+        this->declare_parameter("publish_global_cloud_rate", 1.0);
+        double publish_rate;
+        this->get_parameter("publish_global_cloud_rate", publish_rate);
+
+        this->declare_parameter("local_voxel_resolution", 0.05);
+        this->get_parameter("local_voxel_resolution", local_voxel_resolution_);
+
+        this->declare_parameter("global_voxel_resolution", 0.1);
+        this->get_parameter("global_voxel_resolution", global_voxel_resolution_);
+
+        this->declare_parameter("z_thresh_max", 2.0);
+        this->get_parameter("z_thresh_max", z_thresh_max_);
 
         // 1) Subscribers
         pc_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -74,6 +88,15 @@ public:
             "trigger_global_cloud",
             std::bind(&DepthPointcloudStitcher::processServiceCallback, this,
                       std::placeholders::_1, std::placeholders::_2));
+
+        if (publish_rate > 0.0) {
+            auto period_ms = static_cast<int>(1000.0 / publish_rate);
+            publish_timer_ = this->create_wall_timer(
+                std::chrono::milliseconds(period_ms),
+                std::bind(&DepthPointcloudStitcher::timerPublishCallback, this),
+                callback_group_timer_);
+            RCLCPP_INFO(this->get_logger(), "Continuous global cloud publishing at %.1f Hz.", publish_rate);
+        }
 
         RCLCPP_INFO(this->get_logger(), "DepthPointcloudStitcher node started.");
     }
@@ -167,6 +190,71 @@ private:
                 //             "No matching pointcloud found for pose_id=%d.", pose_id);
             }
         }
+    }
+
+    // Periodically builds and publishes the accumulated global cloud so Nav2's
+    // global costmap can use it as a persistent marking source.
+    void timerPublishCallback()
+    {
+        std::lock_guard<std::mutex> lock(global_pcl_mutex_);
+        if (pointcloud_frame_id_ == nullptr || stored_pose_clouds_.empty())
+            return;
+
+        geometry_msgs::msg::TransformStamped cdo_to_cl;
+        try {
+            cdo_to_cl = tf_buffer_.lookupTransform(
+                robot_base_frame_id_, *pointcloud_frame_id_, tf2::TimePointZero);
+        } catch (const tf2::TransformException &ex) {
+            RCLCPP_WARN(this->get_logger(), "TF lookup failed in timer publish: %s", ex.what());
+            return;
+        }
+        Eigen::Isometry3d T_CL_CDO = tf2::transformToEigen(cdo_to_cl.transform);
+
+        pcl::PointCloud<pcl::PointXYZRGB> global_map_cloud;
+        for (const auto &pair : stored_pose_clouds_) {
+            const auto &pose_id = pair.first;
+            const auto cloud_msg = pair.second;
+            const auto &camera_pose = stored_poses_[pose_id];
+
+            pcl::PointCloud<pcl::PointXYZRGB> pcl_in_dense;
+            pcl::fromROSMsg(*cloud_msg, pcl_in_dense);
+
+            pcl::PointCloud<pcl::PointXYZRGB> pcl_in;
+            pcl::VoxelGrid<pcl::PointXYZRGB> local_filter;
+            local_filter.setInputCloud(pcl_in_dense.makeShared());
+            local_filter.setLeafSize(local_voxel_resolution_, local_voxel_resolution_, local_voxel_resolution_);
+            local_filter.filter(pcl_in);
+
+            Eigen::Isometry3d T_map_CL = poseToEigen(camera_pose);
+            Eigen::Isometry3d T_map_CDO = T_map_CL * T_CL_CDO;
+
+            pcl::PointCloud<pcl::PointXYZRGB> pcl_out;
+            pcl_out.reserve(pcl_in.size());
+            for (const auto &pt : pcl_in) {
+                if (!std::isfinite(pt.x) || !std::isfinite(pt.y) || !std::isfinite(pt.z)) continue;
+                if (pt.z > z_thresh_max_) continue;
+                Eigen::Vector3d p_out = T_map_CDO * Eigen::Vector3d(pt.x, pt.y, pt.z);
+                pcl::PointXYZRGB tp;
+                tp.x = p_out.x(); tp.y = p_out.y(); tp.z = p_out.z();
+                tp.rgb = pt.rgb;
+                pcl_out.push_back(tp);
+            }
+            global_map_cloud += pcl_out;
+        }
+
+        if (global_map_cloud.empty()) return;
+
+        pcl::PointCloud<pcl::PointXYZRGB> global_map_filtered;
+        pcl::VoxelGrid<pcl::PointXYZRGB> global_filter;
+        global_filter.setInputCloud(global_map_cloud.makeShared());
+        global_filter.setLeafSize(global_voxel_resolution_, global_voxel_resolution_, global_voxel_resolution_);
+        global_filter.filter(global_map_filtered);
+
+        sensor_msgs::msg::PointCloud2 output;
+        pcl::toROSMsg(global_map_filtered, output);
+        output.header.frame_id = "map";
+        output.header.stamp = this->now();
+        global_pc_pub_->publish(output);
     }
 
     /**
@@ -354,10 +442,17 @@ private:
     std::mutex global_pcl_mutex_;                                                                    // protects stored_point_clouds_
     std::vector<int32_t> discarded_pose_ids_; // For debugging, store the pose ids
 
+    // Timer for continuous global cloud publishing
+    rclcpp::TimerBase::SharedPtr publish_timer_;
+    double local_voxel_resolution_;
+    double global_voxel_resolution_;
+    double z_thresh_max_;
+
     // Callback groups
     rclcpp::CallbackGroup::SharedPtr callback_group_pc_;
     rclcpp::CallbackGroup::SharedPtr callback_group_map_;
     rclcpp::CallbackGroup::SharedPtr callback_group_service_;
+    rclcpp::CallbackGroup::SharedPtr callback_group_timer_;
 };
 
 // Main

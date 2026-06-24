@@ -346,6 +346,7 @@ public:
     GeometricCamera* mpCamera, *mpCamera2;
     cv::Mat mImGray;
     cv::Mat mImGrayLast;
+    cv::Mat mImDepth;
     //Number of KeyPoints extracted in the left and right images
     int Nleft, Nright;
     //Number of Non Lapping Keypoints

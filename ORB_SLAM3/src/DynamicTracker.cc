@@ -56,7 +56,6 @@ void DynamicTracker::Reset()
     next_id = 0;
     onInitialization = true;
     onTrackingLost = false;
-    // Clear any cached state
 }
 
 void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
@@ -71,7 +70,7 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
 
     if(mCurrentFrame.mImGray.empty()) return;
     if(mLastFrame.mImGrayLast.empty()) return;
-    
+
     std::vector<std::vector<int>> clusters;
     std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> CurrentObjects;
     std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> PrevObjects;
@@ -127,6 +126,11 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
             cv::Point2f(maxx, maxy)
         );
 
+        // Skip zero-area cluster boxes (single collocated point or all same coordinate).
+        // These produce 0x0 bboxes that mask nothing and confuse Hungarian.
+        if(clusterBox.area() <= 0)
+            continue;
+
         float bestIoU = 0.0f;
         Detection bestDet;
 
@@ -180,6 +184,23 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
     }
 
     // ----------------------------------------------------------------
+    // DENSE DEPTH SAMPLING — enrich pointsHistoryBuffer for stable PCA
+    // Called after bbox is finalised; uses depth image stored in Frame.
+    // ----------------------------------------------------------------
+    if(!mCurrentFrame.mImDepth.empty())
+    {
+        for(auto& obj : CurrentObjects)
+        {
+            obj.SampleDepthPoints(
+                mCurrentFrame.mImDepth,
+                mCurrentFrame.GetPose(),
+                Frame::fx, Frame::fy, Frame::cx, Frame::cy,
+                mCurrentFrame.mThDepth
+            );
+        }
+    }
+
+    // ----------------------------------------------------------------
     PrevObjects = mLastFrame.mDynamicObjects;
 
     // ----------------------------------------------------------------
@@ -198,7 +219,9 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
                 : PrevObjects[i].centroid3D;
 
             float dist     = cv::norm(CurrentObjects[j].centroid3D - predicted);
-            float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
+            float sizeDiff = 0.0f;
+            if(!PrevObjects[i].axes.empty() && !CurrentObjects[j].axes.empty())
+                sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
 
             dist_vect.push_back(dist);
             size_vect.push_back(sizeDiff);
@@ -240,7 +263,9 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
                         : PrevObjects[i].centroid3D;
 
                     float dist     = cv::norm(CurrentObjects[j].centroid3D - kf_predicted);
-                    float sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
+                    float sizeDiff = 0.0f;
+                    if(!PrevObjects[i].axes.empty() && !CurrentObjects[j].axes.empty())
+                        sizeDiff = cv::norm(PrevObjects[i].axes - CurrentObjects[j].axes);
 
                     float d_score = (dist * dist) / (sigma_d * sigma_d);
                     float s_score = (sizeDiff * sizeDiff) / (sigma_s * sigma_s);
@@ -461,18 +486,30 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
     if(mpFrameDrawer && !frame.empty())
         mpFrameDrawer->SetDynamicFrame(frame);
 
-    // Add to DynamicTracker::ProcessFrame, temporary debug
-    for(auto& obj : mCurrentFrame.mDynamicObjects)
+    // Debug: frame-level summary for two-person and motion-blur windows
     {
-        std::cout << "[DynObj] id=" << obj.id
-                << " missed=" << obj.missed_frames
-                << " tracked=" << obj.tracked_frames
-                << " centroid=(" << obj.centroid3D.x << ","
-                << obj.centroid3D.y << ","
-                << obj.centroid3D.z << ")"
-                << " vel=(" << obj.velocity.x << ","
-                << obj.velocity.y << ","
-                << obj.velocity.z << ")" << std::endl;
+        double ts = mCurrentFrame.mTimeStamp;
+        double t  = ts - 1341846314.157989;
+        bool in_window = (t >= 1.8 && t <= 2.5) ||  // two-person region
+                         (t >= 6.5 && t <= 7.6);     // motion-blur spike region
+        if(in_window)
+        {
+            std::cout << std::fixed << std::setprecision(3)
+                      << "[DYNTRACK t=" << t << "s]"
+                      << "  yolo_dets=" << mCurrentFrame.mDetections.size()
+                      << "  clusters="  << clusters.size()
+                      << "  curr_objs=" << CurrentObjects.size()
+                      << "  tracked="   << mCurrentFrame.mDynamicObjects.size()
+                      << std::endl;
+            for(auto& obj : mCurrentFrame.mDynamicObjects)
+                std::cout << "    id=" << obj.id
+                          << " missed=" << obj.missed_frames
+                          << " tracked_frames=" << obj.tracked_frames
+                          << " pts3D=" << obj.points3D.size()
+                          << " bbox=(" << obj.bbox.x << "," << obj.bbox.y
+                          << " " << obj.bbox.width << "x" << obj.bbox.height << ")"
+                          << std::endl;
+        }
     }
 }
 

@@ -72,9 +72,10 @@ Frame::Frame(const Frame &frame)
      mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
      mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false),mvbDynamic(frame.mvbDynamic),
-     mDynamicObjects(frame.mDynamicObjects), mvDynamicKeys(frame.mvDynamicKeys), 
+     mDynamicObjects(frame.mDynamicObjects), mvDynamicKeys(frame.mvDynamicKeys),
      mvDynamicPoints3D(frame.mvDynamicPoints3D), mvDynamicGridPos(frame.mvDynamicGridPos),
-     N_dynamic(frame.N_dynamic), mDetections(frame.mDetections), mDynamicMask(frame.mDynamicMask.clone())
+     N_dynamic(frame.N_dynamic), mDetections(frame.mDetections), mDynamicMask(frame.mDynamicMask.clone()),
+     mImDepth(frame.mImDepth)
 {
     mImGrayLast = frame.mImGray.clone();
 
@@ -246,6 +247,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     UndistortKeyPoints();
 
     ComputeStereoFromRGBD(imDepth);
+    mImDepth = imDepth;
 
     mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
 
@@ -402,6 +404,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     UndistortKeyPoints();
     UndistortDynamicKeyPoints();
     ComputeStereoFromRGBD(imDepth);
+    mImDepth = imDepth;
 
     for(size_t i = 0; i < mvDynamicKeys.size(); i++)
     {

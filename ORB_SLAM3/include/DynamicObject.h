@@ -92,6 +92,11 @@ public:
 
     void UpdatePoseFromState();
 
+    void SampleDepthPoints(const cv::Mat& imDepth,
+                           const Sophus::SE3<float>& Tcw,
+                           float fx_, float fy_, float cx_, float cy_,
+                           float maxDepth);
+
     void InitKalman()
     {
         kf_x << centroid3D.x, centroid3D.y, centroid3D.z, 0, 0, 0;

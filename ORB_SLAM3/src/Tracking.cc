@@ -2089,8 +2089,10 @@ void Tracking::Track()
         std::vector<std::pair<int, int>> idx_matches;
 
         // Check both frames are valid and from the same map session
-        if (!mLastFrame.mImGrayLast.empty() && 
-            !mLastFrame.mvDynamicKeys.empty() && 
+        if (!mLastFrame.mImGrayLast.empty() &&
+            !mCurrentFrame.mImGray.empty() &&
+            !mCurrentFrame.mImDepth.empty() &&
+            !mLastFrame.mvDynamicKeys.empty() &&
             !mCurrentFrame.mvDynamicKeys.empty() &&
             mLastFrame.mnId > 0 &&
             mCurrentFrame.mnId > 0 &&

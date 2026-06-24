@@ -93,6 +93,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     SetPose(F.GetPose());
 
     mnOriginMapId = pMap->GetId();
+    mDynamicObjects = F.mDynamicObjects;
 }
 
 void KeyFrame::ComputeBoW()

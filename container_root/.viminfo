@@ -11,13 +11,13 @@
 # hlsearch on (H) or off (h):
 ~h
 # Last Search Pattern:
-~MSle0~/rmw
+~MSle0~/yolo_dets
 
 # Command Line History (newest to oldest):
+:q!
+|2,0,1782313178,,"q!"
 :wq!
 |2,0,1780590408,,"wq!"
-:q!
-|2,0,1780590339,,"q!"
 :x
 |2,0,1709635249,,"x"
 :q
@@ -30,6 +30,10 @@
 |2,0,1708855936,,"!q"
 
 # Search String History (newest to oldest):
+?/yolo_dets
+|2,1,1782313157,47,"yolo_dets"
+?/tracked
+|2,1,1782313138,47,"tracked"
 ??rmw
 |2,1,1778595618,63,"rmw"
 ?/colcon
@@ -53,32 +57,198 @@
 |3,1,36,0,1,0,1708855923,"s"
 
 # File marks:
-'0  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
-|4,48,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
-'1  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
-|4,49,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
-'2  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
-|4,50,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
-'3  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
-|4,51,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
-'4  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,52,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
-'5  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,53,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
-'6  63  0  /opt/ros/humble/setup.sh
-|4,54,63,0,1778596194,"/opt/ros/humble/setup.sh"
-'7  35  0  /opt/ros/humble/setup.sh
-|4,55,35,0,1778595806,"/opt/ros/humble/setup.sh"
-'8  35  0  /opt/ros/humble/setup.sh
-|4,56,35,0,1778595806,"/opt/ros/humble/setup.sh"
-'9  11  0  /opt/ros/humble/setup.bash
-|4,57,11,0,1778595785,"/opt/ros/humble/setup.bash"
+'0  249  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,48,249,21,1782313178,"/home/orb/ORB_SLAM3/build/slam.log"
+'1  1981  0  /home/orb/ORB_SLAM3/build/slam.log
+|4,49,1981,0,1782312643,"/home/orb/ORB_SLAM3/build/slam.log"
+'2  1981  0  /home/orb/ORB_SLAM3/build/slam.log
+|4,50,1981,0,1782312643,"/home/orb/ORB_SLAM3/build/slam.log"
+'3  460  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,51,460,0,1782312318,"/home/orb/ORB_SLAM3/build/debug.txt"
+'4  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,52,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+'5  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,53,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+'6  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,54,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+'7  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,55,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+'8  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
+|4,56,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
+'9  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
+|4,57,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
 
 # Jumplist (newest first):
+-'  249  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,249,21,1782313178,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  241  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,241,21,1782313176,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  236  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,236,21,1782313176,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  231  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,231,21,1782313175,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  226  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,226,21,1782313175,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  221  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,221,21,1782313174,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  216  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,216,21,1782313174,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  699  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,699,21,1782313174,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  695  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,695,21,1782313174,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  691  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,691,21,1782313173,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  687  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,687,21,1782313173,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  681  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,681,21,1782313173,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  677  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,677,21,1782313173,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  673  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,673,21,1782313173,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  669  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,669,21,1782313172,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  665  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,665,21,1782313172,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  661  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,661,21,1782313172,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  657  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,657,21,1782313172,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  653  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,653,21,1782313172,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  649  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,649,21,1782313171,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  640  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,640,21,1782313171,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  635  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,635,21,1782313171,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  630  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,630,21,1782313171,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  625  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,625,21,1782313171,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  620  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,620,21,1782313170,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  612  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,612,21,1782313170,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  608  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,608,21,1782313170,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  604  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,604,21,1782313170,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  600  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,600,21,1782313169,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  596  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,596,21,1782313169,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  586  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,586,21,1782313169,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  577  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,577,21,1782313168,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  569  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,569,21,1782313168,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  314  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,314,21,1782313168,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  309  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,309,21,1782313167,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  304  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,304,21,1782313167,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  299  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,299,21,1782313167,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  294  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,294,21,1782313166,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  289  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,289,21,1782313166,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  284  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,284,21,1782313166,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  279  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,279,21,1782313165,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  273  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,273,21,1782313164,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  267  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,267,21,1782313164,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  261  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,261,21,1782313164,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  255  21  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,255,21,1782313163,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  217  18  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,217,18,1782313157,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  1  0  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,1,0,1782313127,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  1981  0  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,1981,0,1782312643,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  1981  0  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,1981,0,1782312643,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  1  0  /home/orb/ORB_SLAM3/build/slam.log
+|4,39,1,0,1782312639,"/home/orb/ORB_SLAM3/build/slam.log"
+-'  460  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,460,0,1782312318,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  460  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,460,0,1782312318,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  460  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,460,0,1782312318,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  460  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,460,0,1782312318,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  5190  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,5190,0,1782312303,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  5190  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,5190,0,1782312303,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  5190  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,5190,0,1782312303,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  5190  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,5190,0,1782312303,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  1  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,1,0,1782312301,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  1  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,1,0,1782312301,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  1  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,1,0,1782312301,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  1  0  /home/orb/ORB_SLAM3/build/debug.txt
+|4,39,1,0,1782312301,"/home/orb/ORB_SLAM3/build/debug.txt"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
 -'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
 |4,39,70,0,1780590408,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
 -'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
 |4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  16  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,16,1780590365,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
 -'  70  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
 |4,39,70,0,1780590339,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
 -'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
@@ -87,196 +257,38 @@
 |4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
 -'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
 |4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  11  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,11,0,1780416841,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  1  0  ~/colcon_ws/src/realsense_handler/launch/realsense.launch.py
-|4,39,1,0,1780416836,"~/colcon_ws/src/realsense_handler/launch/realsense.launch.py"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  18  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,18,0,1780416000,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  1  0  ~/colcon_ws/src/realsense_handler/config/realsense.yaml
-|4,39,1,0,1780415991,"~/colcon_ws/src/realsense_handler/config/realsense.yaml"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  63  0  /opt/ros/humble/setup.sh
-|4,39,63,0,1778596194,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
--'  35  0  /opt/ros/humble/setup.sh
-|4,39,35,0,1778596189,"/opt/ros/humble/setup.sh"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
+-'  1  0  ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
+|4,39,1,0,1780590261,"~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml"
 
 # History of marks within files (newest to oldest):
+
+> /home/orb/ORB_SLAM3/build/slam.log
+	*	1782313176	0
+	"	249	21
+
+> /home/orb/ORB_SLAM3/build/debug.txt
+	*	1782312315	0
+	"	460	0
 
 > ~/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/Examples/RGB-D/TUM3.yaml
 	*	1780590406	0

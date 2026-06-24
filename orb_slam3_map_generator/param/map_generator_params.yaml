@@ -10,3 +10,7 @@ orb_slam3_pointcloud_stitcher:
     depth_pointcloud_topic: "lidar/points"
     input_pointcloud_rate: 10.0
     robot_base_frame: "base_footprint" # should be the same frame as the one used in the slam
+    publish_global_cloud_rate: 1.0     # Hz — feeds Nav2 global costmap continuously
+    local_voxel_resolution: 0.05       # 5 cm per-keyframe downsampling
+    global_voxel_resolution: 0.1       # 10 cm global map downsampling
+    z_thresh_max: 2.0                  # metres — matches costmap max_obstacle_height
