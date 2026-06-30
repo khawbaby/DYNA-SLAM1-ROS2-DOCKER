@@ -45,6 +45,7 @@
 #include "EdgeCameraObject.h"
 #include "EdgeRigidBody.h"
 #include "EdgeEllipsoidRigid.h"
+#include "EdgeCentroidPrior.h"
 namespace ORB_SLAM3
 {
 bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
@@ -1963,13 +1964,80 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     }
     num_edges = nEdges;
 
+    // --- Object centroid landmarks ---
+    // One VertexSBAPointXYZ per (local KF, object) pair, marginalized like MapPoints.
+    // EdgeSE3ProjectXYZ: bbox center reprojection (soft weight, Huber).
+    // EdgeCentroidPrior: anchors centroid to depth-sensor estimate to prevent
+    //   depth drift when only one 2D view constrains the vertex.
+
+    long unsigned int centroidIdBase = maxKFid + 1;
+    for(auto& pMP : lLocalMapPoints) {
+        long unsigned int vid = (long unsigned int)pMP->mnId + maxKFid + 1;
+        if(vid >= centroidIdBase) centroidIdBase = vid + 1;
+    }
+
+    struct CentroidEntry { long unsigned int vtx_id; KeyFrame* pKF; size_t obj_idx; };
+    std::vector<CentroidEntry> vCentroidEntries;
+    std::vector<EdgeSE3ProjectXYZ*> vpEdgesCentroidProj;
+
+    const double centroid_proj_info  = 0.01;
+    const double centroid_prior_info = 2.0;
+    long unsigned int centroidVtxId  = centroidIdBase;
+
+    for(auto lit = lLocalKeyFrames.begin(); lit != lLocalKeyFrames.end(); ++lit) {
+        KeyFrame* pKFi = *lit;
+        if(pKFi->mDynamicObjects.empty() || !pKFi->mpCamera) continue;
+
+        for(size_t oi = 0; oi < pKFi->mDynamicObjects.size(); ++oi) {
+            const auto& obj = pKFi->mDynamicObjects[oi];
+            if(!obj.kf_initialized || obj.missed_frames > 0) continue;
+            if(obj.bbox.area() <= 0) continue;
+
+            Eigen::Vector3d centroid(obj.kf_x(0), obj.kf_x(1), obj.kf_x(2));
+
+            g2o::VertexSBAPointXYZ* vCent = new g2o::VertexSBAPointXYZ();
+            vCent->setEstimate(centroid);
+            vCent->setId(centroidVtxId);
+            vCent->setMarginalized(true);
+            optimizer.addVertex(vCent);
+
+            vCentroidEntries.push_back({centroidVtxId, pKFi, oi});
+
+            // Bbox center reprojection
+            Eigen::Vector2d bboxCtr(obj.bbox.x + obj.bbox.width  * 0.5,
+                                    obj.bbox.y + obj.bbox.height * 0.5);
+
+            EdgeSE3ProjectXYZ* eProj = new EdgeSE3ProjectXYZ();
+            eProj->setVertex(0, optimizer.vertex(centroidVtxId));
+            eProj->setVertex(1, optimizer.vertex(pKFi->mnId));
+            eProj->setMeasurement(bboxCtr);
+            eProj->setInformation(Eigen::Matrix2d::Identity() * centroid_proj_info);
+            g2o::RobustKernelHuber* rkCent = new g2o::RobustKernelHuber;
+            rkCent->setDelta(thHuberMono);
+            eProj->setRobustKernel(rkCent);
+            eProj->pCamera = pKFi->mpCamera;
+            optimizer.addEdge(eProj);
+            vpEdgesCentroidProj.push_back(eProj);
+
+            // Depth-sensor anchor prior
+            EdgeCentroidPrior* ePrior = new EdgeCentroidPrior();
+            ePrior->setVertex(0, optimizer.vertex(centroidVtxId));
+            ePrior->setMeasurement(centroid);
+            ePrior->setInformation(Eigen::Matrix3d::Identity() * centroid_prior_info);
+            optimizer.addEdge(ePrior);
+
+            centroidVtxId++;
+        }
+    }
+
     if(pbStopFlag)
         if(*pbStopFlag)
             return;
 
-    for(auto e : vpEdgesMono)   if(!e->isDepthPositive()) e->setLevel(1);
-    for(auto e : vpEdgesBody)   if(!e->isDepthPositive()) e->setLevel(1);
-    for(auto e : vpEdgesStereo) if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesMono)         if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesBody)         if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesStereo)       if(!e->isDepthPositive()) e->setLevel(1);
+    for(auto e : vpEdgesCentroidProj) if(!e->isDepthPositive()) e->setLevel(1);
 
     optimizer.initializeOptimization();
     optimizer.optimize(10);
@@ -2056,6 +2124,16 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
         pMP->UpdateNormalAndDepth();
+    }
+
+    // Write back refined centroids to KF DynamicObjects
+    for(auto& entry : vCentroidEntries) {
+        g2o::VertexSBAPointXYZ* vC = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(entry.vtx_id));
+        Eigen::Vector3d refined = vC->estimate();
+        auto& obj = entry.pKF->mDynamicObjects[entry.obj_idx];
+        obj.kf_x(0) = (float)refined(0);
+        obj.kf_x(1) = (float)refined(1);
+        obj.kf_x(2) = (float)refined(2);
     }
 
     pMap->IncreaseChangeIndex();

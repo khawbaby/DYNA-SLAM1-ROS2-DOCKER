@@ -139,6 +139,7 @@ include/EdgeObjectMotion.h
 include/EdgeCameraObject.h
 include/EdgeRigidBody.h
 include/EdgeEllipsoidRigid.h
+include/EdgeCentroidPrior.h
 include/Detection.h
 )
 
