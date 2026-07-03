@@ -71,7 +71,7 @@ services:
       - ./ORB_SLAM3/maps:/home/orb/ORB_SLAM3/maps
       - ./ORB_SLAM3/logs:/home/orb/ORB_SLAM3/logs
       - ./ORB_SLAM3/models:/home/orb/ORB_SLAM3/models
-
+    
     runtime: nvidia
     deploy:
       resources:

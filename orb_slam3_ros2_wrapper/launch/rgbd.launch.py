@@ -52,16 +52,16 @@ def generate_launch_description():
             # 'robot_base_frame': base_frame + 'base_footprint',
             # 'odom_frame': base_frame + 'odom'
             'robot_base_frame': 'base_link',
-            'robot_x': 0.0,
-            'robot_y': 0.015,   # camera is ~1.5cm off-centre laterally
-            'robot_z': 0.200,   # camera is 20cm above base_link
+            'robot_x': '0.0',
+            'robot_y': '0.015',   # camera is ~1.5cm off-centre laterally
+            'robot_z': '0.200',   # camera is 20cm above base_link
             # Rotation from base_link -> camera_color_optical_frame (Z-fwd, X-right, Y-down)
             # Measured from live TF: base_link -> camera_color_optical_frame ≈ RPY(-90°, 0°, -90°)
-            'robot_qx': -0.5,
-            'robot_qy':  0.5,
-            'robot_qz': -0.5,
-            'robot_qw':  0.5,
-            'odometry_mode': True
+            'robot_qx': '-0.5',
+            'robot_qy': '0.5',
+            'robot_qz': '-0.5',
+            'robot_qw': '0.5',
+            'odometry_mode': 'True'
             }
 
 

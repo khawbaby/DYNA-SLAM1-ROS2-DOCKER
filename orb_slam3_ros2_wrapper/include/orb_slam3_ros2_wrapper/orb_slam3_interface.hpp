@@ -144,6 +144,14 @@ namespace ORB_SLAM3_Wrapper
         std::string odomFrame_;
         std::string robotFrame_;
 
+        // The robot is planar and wheel odometry is flat by construction (it never
+        // estimates height/tilt), so map->odom is pinned to this flat z/roll/pitch
+        // rather than trusting SLAM's full 6DOF estimate on those axes, which drift
+        // when visual tracking quality degrades. Captured from the first tracked
+        // frame since the SLAM-frame flat offset isn't a fixed known constant.
+        bool hasFlatZReference_ = false;
+        float flatZReference_ = 0.0f;
+
         TimeProfiler* time_profiler_;
     };
 }

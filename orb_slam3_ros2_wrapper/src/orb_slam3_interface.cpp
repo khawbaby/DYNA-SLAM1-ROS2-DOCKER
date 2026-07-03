@@ -412,7 +412,24 @@ namespace ORB_SLAM3_Wrapper
             // get transform between map and odom and send the transform.
             std::lock_guard<std::mutex> lock(latestTrackedPoseMutex_);
             auto tfMapOdom = latestTrackedPose_ * latestOdomTransform_.inverse();
-            geometry_msgs::msg::Pose poseMapOdom = affine3fToPose(tfMapOdom);
+
+            // Constrain to the floor plane: keep only x/y/yaw from SLAM (the axes it's
+            // actually well-constrained on) and pin z/roll/pitch to the flat value seen
+            // on the first tracked frame, since wheel odometry is flat by construction
+            // and SLAM's z/roll/pitch drift off-plane when tracking quality degrades.
+            if (!hasFlatZReference_)
+            {
+                flatZReference_ = tfMapOdom.translation().z();
+                hasFlatZReference_ = true;
+            }
+            Eigen::Quaternionf q(tfMapOdom.rotation());
+            float yaw = std::atan2(2.0f * (q.w() * q.z() + q.x() * q.y()),
+                                    1.0f - 2.0f * (q.y() * q.y() + q.z() * q.z()));
+            Eigen::Affine3f flatTfMapOdom =
+                Eigen::Translation3f(tfMapOdom.translation().x(), tfMapOdom.translation().y(), flatZReference_) *
+                Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+
+            geometry_msgs::msg::Pose poseMapOdom = affine3fToPose(flatTfMapOdom);
             rclcpp::Duration transformTimeout_ = rclcpp::Duration::from_seconds(0.5);
             rclcpp::Time odomTimestamp = odomToBaseTf.header.stamp;
             tf.header.stamp = odomTimestamp + transformTimeout_;
