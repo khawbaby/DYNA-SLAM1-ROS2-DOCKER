@@ -1980,7 +1980,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     std::vector<CentroidEntry> vCentroidEntries;
     std::vector<EdgeSE3ProjectXYZ*> vpEdgesCentroidProj;
 
-    const double centroid_proj_info  = 0.01;
+    const double centroid_proj_info  = 0.05;  // reprojection weight (pixels^-2)
     const double centroid_prior_info = 2.0;
     long unsigned int centroidVtxId  = centroidIdBase;
 
