@@ -178,6 +178,17 @@ void DynamicObject::UpdateFromMeasurement(const DynamicObject& meas, const Dynam
     points2D = meas.points2D;
     bbox     = meas.bbox;
 
+    // 2D bbox-center velocity (pixels/frame), smoothed like axes below.
+    // Lets mask refinement pad a *matched* detection one step further along
+    // its own recent motion - the mask/detections topics aren't timestamp
+    // -synced to the RGB frame (see MaskCallback in rgbd-slam-node.cpp), so
+    // even a "matched" bbox this frame can already be ~1 YOLO cycle behind
+    // the object's true current position.
+    cv::Point2f prevCenter(prev.bbox.x + prev.bbox.width * 0.5f, prev.bbox.y + prev.bbox.height * 0.5f);
+    cv::Point2f measCenter(meas.bbox.x + meas.bbox.width * 0.5f, meas.bbox.y + meas.bbox.height * 0.5f);
+    cv::Point2f rawVel = measCenter - prevCenter;
+    velocity2D = (prev.tracked_frames > 0) ? (0.5f * rawVel + 0.5f * prev.velocity2D) : rawVel;
+
     // Merge: start from prev's optical-flow history, then append the dense
     // depth samples that SampleDepthPoints stored in meas before this call
     pointsHistoryBuffer = prev.pointsHistoryBuffer;

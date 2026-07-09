@@ -196,6 +196,12 @@ public:
     cv::Mat mDynamicMask;
     std::vector<bool> mvbDynamic;
 
+    // Shared by the per-detection refinement in the RGB-D constructor and by
+    // Tracking's motion-compensated prediction for objects the current
+    // frame's YOLO pass didn't confirm: scales the erosion margin to bbox
+    // size and fills interior gaps in the dynamic (0) region within it.
+    static void RefineDynamicMaskRegion(cv::Mat& mask, const cv::Rect& bboxRaw);
+
     // Vocabulary used for relocalization.
     ORBVocabulary* mpORBvocabulary;
 

@@ -28,6 +28,7 @@
 #include "Detection.h"
 
 #include <thread>
+#include <algorithm>
 #include <include/CameraModels/Pinhole.h>
 #include <include/CameraModels/KannalaBrandt8.h>
 
@@ -298,6 +299,51 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     AssignFeaturesToGrid();
 }
 
+void Frame::RefineDynamicMaskRegion(cv::Mat& mask, const cv::Rect& bboxRaw)
+{
+    cv::Rect bbox = bboxRaw & cv::Rect(0, 0, mask.cols, mask.rows);
+    if (bbox.width <= 0 || bbox.height <= 0)
+        return;
+
+    // Scale the dilation margin to the object's own size in this frame:
+    // a fixed kernel under-covers large/close objects (more motion blur,
+    // more silhouette uncertainty at the edge) and over-erases static
+    // features around small/distant ones.
+    int dilation_size = std::clamp(
+        static_cast<int>(std::round(std::min(bbox.width, bbox.height) * 0.05)),
+        3, 25);
+    cv::Mat kernel = cv::getStructuringElement(
+        cv::MORPH_ELLIPSE,
+        cv::Size(2*dilation_size + 1, 2*dilation_size + 1),
+        cv::Point(dilation_size, dilation_size)
+    );
+
+    // Pad the working region by the kernel radius so the margin erosion
+    // below has real static-side context at the bbox edges, instead of
+    // treating the crop boundary itself as an edge.
+    cv::Rect roi(
+        std::max(0, bbox.x - dilation_size),
+        std::max(0, bbox.y - dilation_size),
+        0, 0);
+    roi.width  = std::min(mask.cols, bbox.x + bbox.width  + dilation_size) - roi.x;
+    roi.height = std::min(mask.rows, bbox.y + bbox.height + dilation_size) - roi.y;
+    cv::Mat region = mask(roi);
+
+    // Fill interior gaps: segmentation noise/holes inside the object's
+    // silhouette (e.g. between limbs, dropped pixels) otherwise leave
+    // static-labelled islands surrounded by dynamic pixels. Take the
+    // outer contour of the dynamic (0) blob and fill it solid.
+    cv::Mat dynamicFg = (region == 0);
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(dynamicFg, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::drawContours(region, contours, -1, cv::Scalar(0), cv::FILLED);
+
+    // Erode the static (1) region to expand the dynamic (0) object region
+    // outward. Dilate would expand the background (1) and shrink the
+    // object mask — wrong direction.
+    cv::erode(region, region, kernel);
+}
+
 // RGB-D
 Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynamicMask, const std::vector<Detection>& detections, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera,Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
@@ -338,17 +384,12 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
     mvbDynamic = std::vector<bool>(mvKeys.size(), false);
     //std::cout << "Before dynamic Filtering: " << mvKeys.size() << std::endl;
     // cout << "size of keyframe matrix: " << mvbDynamic.size() << endl;
-    int dilation_size = 7;
-    // if (detections.size() > 0)
-    //     std::cout << detections[0].bbox << std::endl;
-    // Morphological Actions
-    cv::Mat kernel = cv::getStructuringElement(
-        cv::MORPH_ELLIPSE,
-        cv::Size(2*dilation_size + 1, 2*dilation_size + 1),
-        cv::Point(dilation_size, dilation_size)
-    );
 
-    cv::dilate(mDynamicMask, mDynamicMask, kernel);
+    // Refine the dynamic mask per detection, scoped to each object's own
+    // bbox rather than one global operation, so nearby detections don't
+    // bleed into each other's kernel sizing.
+    for (const auto& det : detections)
+        RefineDynamicMaskRegion(mDynamicMask, det.bbox);
 
     std::vector<cv::KeyPoint> _mvKeys;
     std::vector<cv::KeyPoint> _mvDynamicKeys;

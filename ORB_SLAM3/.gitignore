@@ -92,3 +92,8 @@ borrar/*
 
 */ExecMean.txt
 **core.**
+
+# Downloaded ONNX Runtime C++ SDK (prototype de-risking a synchronous C++
+# YOLO integration) - third-party binary, not source, don't commit it.
+cpp_yolo_prototype/ort*.tgz
+cpp_yolo_prototype/onnxruntime-linux-x64-*/
