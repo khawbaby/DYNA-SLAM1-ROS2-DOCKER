@@ -135,6 +135,30 @@ RUN /opt/venv/bin/pip install numpy==1.26.4 opencv-python==4.5.5.64 --force-rein
 RUN /opt/venv/bin/pip install onnxruntime-gpu
 
 # ------------------------------------------------------------------------------
+# ONNX Runtime C++ headers, for in-process YOLO inference inside rgbd-slam-node
+# (replaces the old yolo_node.py + async mask/detections topics, which had no
+# timestamp sync to the RGB/D pair). Only the headers are fetched here - the
+# actual runtime libs (incl. the ~430MB CUDA execution provider) are reused
+# from the onnxruntime-gpu wheel installed above, same version, so we don't
+# vendor the much larger standalone C++ GPU SDK tarball a second time.
+# ------------------------------------------------------------------------------
+RUN mkdir -p /opt/onnxruntime && \
+    curl -L https://github.com/microsoft/onnxruntime/releases/download/v1.23.2/onnxruntime-linux-x64-1.23.2.tgz \
+      | tar xz -C /opt/onnxruntime --strip-components=1 onnxruntime-linux-x64-1.23.2/include && \
+    mkdir -p /opt/onnxruntime_gpu_libs && \
+    ln -sf /opt/venv/lib/python3.10/site-packages/onnxruntime/capi/libonnxruntime.so.1.23.2 /opt/onnxruntime_gpu_libs/libonnxruntime.so && \
+    ln -sf /opt/venv/lib/python3.10/site-packages/onnxruntime/capi/libonnxruntime.so.1.23.2 /opt/onnxruntime_gpu_libs/libonnxruntime.so.1 && \
+    ln -sf /opt/venv/lib/python3.10/site-packages/onnxruntime/capi/libonnxruntime_providers_cuda.so /opt/onnxruntime_gpu_libs/ && \
+    ln -sf /opt/venv/lib/python3.10/site-packages/onnxruntime/capi/libonnxruntime_providers_shared.so /opt/onnxruntime_gpu_libs/
+
+# ONNX Runtime's CUDA execution provider is loaded via dlopen() at runtime
+# (a plugin, not a direct link-time dependency), which does NOT inherit the
+# rgbd executable's own RPATH/RUNPATH - it needs these on LD_LIBRARY_PATH
+# instead, for every process regardless of how it's launched (ros2 run,
+# launch file, etc.), hence a global ENV rather than a wrapper script.
+ENV LD_LIBRARY_PATH="/opt/onnxruntime_gpu_libs:/opt/venv/lib/python3.10/site-packages/nvidia/cublas/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cuda_cupti/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cuda_nvrtc/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cuda_runtime/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cudnn/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cufft/lib:/opt/venv/lib/python3.10/site-packages/nvidia/curand/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cusolver/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cusparse/lib:/opt/venv/lib/python3.10/site-packages/nvidia/nccl/lib:/opt/venv/lib/python3.10/site-packages/nvidia/nvjitlink/lib:/opt/venv/lib/python3.10/site-packages/nvidia/nvtx/lib:${LD_LIBRARY_PATH}"
+
+# ------------------------------------------------------------------------------
 # VSCode install script (optional dev tool)
 # ------------------------------------------------------------------------------
 COPY ./container_root/shell_scripts/vscode_install.sh /root/

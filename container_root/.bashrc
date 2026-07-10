@@ -111,3 +111,4 @@ sros
 sws
 source /root/ros_env_vars.sh
 export LD_LIBRARY_PATH=/home/orb/ORB_SLAM3/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/onnxruntime_gpu_libs:/opt/venv/lib/python3.10/site-packages/nvidia/nccl/lib:/opt/venv/lib/python3.10/site-packages/nvidia/nvjitlink/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cudnn/lib:/opt/venv/lib/python3.10/site-packages/nvidia/curand/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cuda_nvrtc/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cufft/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cusolver/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cuda_runtime/lib:/opt/venv/lib/python3.10/site-packages/nvidia/nvtx/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cuda_cupti/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cublas/lib:/opt/venv/lib/python3.10/site-packages/nvidia/cusparse/lib:${LD_LIBRARY_PATH}

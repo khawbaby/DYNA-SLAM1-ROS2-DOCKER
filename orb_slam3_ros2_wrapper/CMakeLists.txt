@@ -59,7 +59,21 @@ include_directories(
   ${ORB_SLAM3_ROOT_DIR}/include
   ${ORB_SLAM3_ROOT_DIR}/include/CameraModels
   /home/orb/ORB_SLAM3/Thirdparty/Sophus
+  /opt/onnxruntime/include
 )
+
+# In-process YOLO inference (rgbd/yolo_seg_detector.cpp) links against the
+# ONNX Runtime GPU-capable libs reused from the onnxruntime-gpu Python wheel
+# (see Dockerfile) - headers come from the separately-fetched CPU package,
+# same version, fully API-compatible. The CUDA execution provider dlopen's
+# cuBLAS/cuDNN/etc. at runtime, which live under the venv's nvidia-* pip
+# packages, so those need to be on the rpath too.
+file(GLOB ONNXRUNTIME_CUDA_RPATH_DIRS
+  /opt/venv/lib/python3.10/site-packages/nvidia/*/lib
+)
+set(ONNXRUNTIME_LIB_DIR /opt/onnxruntime_gpu_libs)
+set(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} ${ONNXRUNTIME_LIB_DIR} ${ONNXRUNTIME_CUDA_RPATH_DIRS})
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} ${ONNXRUNTIME_LIB_DIR} ${ONNXRUNTIME_CUDA_RPATH_DIRS})
 
 if(ORB_SLAM3_ROS2_WRAPPER_ENABLE_CUDA)
   include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
@@ -102,9 +116,10 @@ endif()
 add_executable(rgbd
   src/rgbd/rgbd-slam-node.cpp
   src/rgbd/rgbd.cpp
+  src/yolo_seg_detector.cpp
 )
 ament_target_dependencies(rgbd ${dependencies})
-target_link_libraries(rgbd orb_slam3_ros2_wrapper_common ${PCL_LIBRARIES})
+target_link_libraries(rgbd orb_slam3_ros2_wrapper_common ${PCL_LIBRARIES} ${ONNXRUNTIME_LIB_DIR}/libonnxruntime.so)
 if(ORB_SLAM3_ROS2_WRAPPER_ENABLE_CUDA)
   set_target_properties(rgbd PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   target_compile_definitions(rgbd PRIVATE ORB_SLAM3_ROS2_WRAPPER_ENABLE_CUDA=1)

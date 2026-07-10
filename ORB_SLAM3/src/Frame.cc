@@ -437,8 +437,6 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &dynam
 
     N = mvKeys.size();
     N_dynamic = mvDynamicKeys.size();
-    if (N_dynamic > 0)
-        //std::cout << "After dynamic Filtering: " << mvKeys.size() << std::endl;
     if(mvKeys.empty())
         return;
 

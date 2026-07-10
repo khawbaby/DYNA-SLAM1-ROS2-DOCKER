@@ -111,12 +111,18 @@ std::vector<Detection> NMS(std::vector<Detection> dets) {
 
 int main(int argc, char** argv) {
     if (argc < 3) {
-        std::cerr << "usage: " << argv[0] << " <model.onnx> <image.png> [out_dir]\n";
+        std::cerr << "usage: " << argv[0] << " <model.onnx> <image.png> [out_dir] [--gpu]\n";
         return 1;
     }
     std::string modelPath = argv[1];
     std::string imagePath = argv[2];
-    std::string outDir = argc > 3 ? argv[3] : ".";
+    std::string outDir = ".";
+    bool useGpu = false;
+    for (int i = 3; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--gpu") useGpu = true;
+        else outDir = arg;
+    }
 
     cv::Mat frame = cv::imread(imagePath, cv::IMREAD_COLOR);
     if (frame.empty()) {
@@ -146,6 +152,12 @@ int main(int argc, char** argv) {
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "yolo_seg_prototype");
     Ort::SessionOptions sessionOptions;
     sessionOptions.SetIntraOpNumThreads(4);
+    if (useGpu) {
+        OrtCUDAProviderOptions cudaOptions{};
+        cudaOptions.device_id = 0;
+        sessionOptions.AppendExecutionProvider_CUDA(cudaOptions);
+        std::cout << "requested CUDA execution provider\n";
+    }
     Ort::Session session(env, modelPath.c_str(), sessionOptions);
 
     Ort::AllocatorWithDefaultOptions allocator;
@@ -161,16 +173,19 @@ int main(int argc, char** argv) {
         memInfo, inputTensorValues.data(), inputTensorValues.size(),
         inputShape.data(), inputShape.size());
 
-    // Warm-up + timed run.
+    // Warm-up (CUDA EP does cuDNN algo autotune + context init on first call).
     auto outputs = session.Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensor, 1,
                                 outputNames.data(), outputNames.size());
 
+    constexpr int kTimedRuns = 20;
     auto t0 = std::chrono::steady_clock::now();
-    outputs = session.Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensor, 1,
-                           outputNames.data(), outputNames.size());
+    for (int i = 0; i < kTimedRuns; i++) {
+        outputs = session.Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensor, 1,
+                               outputNames.data(), outputNames.size());
+    }
     auto t1 = std::chrono::steady_clock::now();
-    double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-    std::cout << "inference took " << ms << " ms\n";
+    double ms = std::chrono::duration<double, std::milli>(t1 - t0).count() / kTimedRuns;
+    std::cout << "inference took " << ms << " ms (avg of " << kTimedRuns << " runs)\n";
 
     // ---- Postprocess: decode output0 [1,116,8400] ----
     float* out0 = outputs[0].GetTensorMutableData<float>();
