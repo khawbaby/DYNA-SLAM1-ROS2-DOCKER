@@ -8,6 +8,18 @@ datasets
 build
 install
 log
-container_root/.cache
-container_root/.bash_history
+# container_root/ mirrors the live container's /root - it accumulates
+# root-owned runtime state (dotfiles from GUI tools, caches, etc.) with
+# permissions the build-context scan can't read. Only one file from this
+# whole tree is actually used by the Dockerfile (the vscode install
+# script). `container_root/*` doesn't catch dotfiles (glob doesn't match
+# a leading dot here), so exclude the directory itself, not a glob under it.
+container_root
+!container_root/shell_scripts
 .git
+
+# Never referenced by the Dockerfile - a 1.6GB unused backup dir and a
+# stale ORB_SLAM3 examples tree, both just bloating the build context.
+FastTrack_backup
+ORB_SLAM3/Examples_old
+ORB_SLAM3/cpp_yolo_prototype
