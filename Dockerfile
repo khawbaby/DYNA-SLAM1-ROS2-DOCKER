@@ -93,9 +93,8 @@ RUN apt-get install -y \
 # ------------------------------------------------------------------------------
 # Build OpenCV 4.4
 # ------------------------------------------------------------------------------
-RUN cd /tmp && git clone https://github.com/opencv/opencv.git && \
+RUN cd /tmp && git clone --branch 4.4.0 --depth 1 https://github.com/opencv/opencv.git && \
     cd opencv && \
-    git checkout 4.4.0 && \
     mkdir build && cd build && \
     cmake -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_EXAMPLES=OFF \
