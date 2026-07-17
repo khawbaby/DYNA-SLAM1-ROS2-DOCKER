@@ -2109,81 +2109,6 @@ void Tracking::Track()
 
     }
 
-    // Motion-compensated mask projection: the mask/detections topics are
-    // async, not timestamp-synced to the RGB/D pair (see MaskCallback in
-    // rgbd-slam-node.cpp), so the raw YOLO mask used to build mCurrentFrame
-    // can lag a moving object's true current position by one or more
-    // frames - for BOTH objects the tracker lost this frame and ones it
-    // matched fine (a "matched" bbox can still be a cycle stale; the
-    // tracker's IoU association doesn't know or care about that).
-    //
-    // - Missed (obj.missed_frames > 0): no fresh 2D detection at all this
-    //   frame, so obj.bbox itself is stale too. Reproject the KF's predicted
-    //   3D centroid into this frame via the last frame-to-frame ego-motion.
-    //   mCurrentFrame's own pose isn't estimated yet at this point in
-    //   Track() (that happens further below), so we can't use GetPose() to
-    //   derive that transform - mVelocity already *is* it
-    //   (Tcw_predicted_current * Twc_last, maintained for the constant-
-    //   velocity model - see its use at mCurrentFrame.SetPose(mVelocity *
-    //   mLastFrame.GetPose()) below), so reuse it directly.
-    // - Matched (missed_frames == 0): obj.bbox is this frame's own fresh
-    //   detection (already refined by the Frame constructor) but may still
-    //   be ~1 YOLO cycle behind. Pad it one more step along the object's own
-    //   recent 2D velocity (DynamicObject::velocity2D) to hedge the leading
-    //   edge in its direction of motion.
-    if (!mCurrentFrame.mDynamicMask.empty())
-    {
-        bool haveTrel = mbVelocity && !mLastFrame.mDynamicMask.empty();
-
-        for (auto& obj : mCurrentFrame.mDynamicObjects)
-        {
-            if (obj.bbox.area() <= 0) continue;
-
-            cv::Rect predicted;
-
-            if (obj.missed_frames > 0)
-            {
-                if (!haveTrel) continue;
-
-                Eigen::Vector3f Pc_curr = mVelocity * Eigen::Vector3f(obj.centroid3D.x, obj.centroid3D.y, obj.centroid3D.z);
-                if (Pc_curr.z() <= 0.1f) continue;
-
-                float u = Frame::fx * Pc_curr.x() / Pc_curr.z() + Frame::cx;
-                float v = Frame::fy * Pc_curr.y() / Pc_curr.z() + Frame::cy;
-
-                predicted = cv::Rect(
-                    (int)std::round(u - obj.bbox.width  * 0.5f),
-                    (int)std::round(v - obj.bbox.height * 0.5f),
-                    obj.bbox.width, obj.bbox.height);
-            }
-            else
-            {
-                if (obj.velocity2D.x == 0.0f && obj.velocity2D.y == 0.0f) continue;
-
-                predicted = cv::Rect(
-                    obj.bbox.x + (int)std::round(obj.velocity2D.x),
-                    obj.bbox.y + (int)std::round(obj.velocity2D.y),
-                    obj.bbox.width, obj.bbox.height);
-            }
-
-            predicted &= cv::Rect(0, 0, mCurrentFrame.mDynamicMask.cols, mCurrentFrame.mDynamicMask.rows);
-            if (predicted.width <= 0 || predicted.height <= 0) continue;
-
-            // No fresh segmentation shape is available for either predicted
-            // case, so stamp the predicted rect solid dynamic first, then
-            // apply the same size-scaled margin the real detections get.
-            mCurrentFrame.mDynamicMask(predicted).setTo(0);
-            Frame::RefineDynamicMaskRegion(mCurrentFrame.mDynamicMask, predicted);
-        }
-    }
-
-    // NOTE: mvpMapPoints isn't populated for mCurrentFrame yet at this point
-    // (Frame's constructor just zero-initializes it; matching against the
-    // map hasn't happened yet) - so a scrub here would always be a no-op.
-    // The actual scrub against the mask updated above runs in TrackLocalMap()
-    // after SearchLocalPoints(), where mvpMapPoints is finally populated and
-    // it can still influence that frame's pose optimization.
-
     if (bStepByStep)
     {
         std::cout << "Tracking: Waiting to the next step" << std::endl;
@@ -2601,6 +2526,7 @@ void Tracking::Track()
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
+        mpMapDrawer->SetTrackedObjects(mCurrentFrame.mDynamicObjects);
 
         if(bOK || mState==RECENTLY_LOST)
         {
@@ -3419,13 +3345,9 @@ bool Tracking::TrackLocalMap()
 
     // Dynamic mask scrub: invalidate any map point SearchLocalPoints just
     // matched (or that TrackWithMotionModel/TrackReferenceKeyFrame already
-    // matched before this) whose keypoint falls in the dynamic mask -
-    // including the motion-compensated regions Track() stamped in earlier
-    // this frame. This has to run here, after matching has actually
-    // populated mvpMapPoints, so it can still affect the pose optimization
-    // immediately below (a version of this placed earlier in Track(), right
-    // after ProcessFrame, was a no-op since mvpMapPoints is still all-null
-    // at that point in a freshly constructed frame).
+    // matched before this) whose keypoint falls in the dynamic mask.
+    // Runs here, after matching has populated mvpMapPoints, so it affects
+    // the pose optimization immediately below.
     if (!mCurrentFrame.mDynamicMask.empty())
     {
         for (int i = 0; i < mCurrentFrame.N; i++)

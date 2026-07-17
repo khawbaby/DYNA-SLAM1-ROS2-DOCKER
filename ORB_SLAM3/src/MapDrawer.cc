@@ -21,6 +21,7 @@
 #include "KeyFrame.h"
 #include <pangolin/pangolin.h>
 #include <mutex>
+#include <cmath>
 
 namespace ORB_SLAM3
 {
@@ -464,4 +465,96 @@ void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin
     MOw.m[13] = Twc(1,3);
     MOw.m[14] = Twc(2,3);
 }
+void MapDrawer::SetTrackedObjects(const std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>>& objs)
+{
+    unique_lock<mutex> lock(mMutexObjects);
+    mvTrackedObjects = objs;
+}
+
+// Draw a unit sphere wireframe, scaled by (a, b, c) along local x/y/z axes.
+// Caller has already pushed/multiplied the pose matrix.
+void MapDrawer::DrawEllipsoidWireframe(float a, float b, float c, int rings, int sectors)
+{
+    const float pi  = static_cast<float>(M_PI);
+    const float two_pi = 2.0f * pi;
+
+    // Latitude rings (constant phi, sweep theta)
+    for (int r = 1; r < rings; r++) {
+        float phi     = pi * r / rings - pi * 0.5f;
+        float cos_phi = std::cos(phi);
+        float sin_phi = std::sin(phi);
+        glBegin(GL_LINE_LOOP);
+        for (int s = 0; s <= sectors; s++) {
+            float theta = two_pi * s / sectors;
+            glVertex3f(a * cos_phi * std::cos(theta),
+                       b * cos_phi * std::sin(theta),
+                       c * sin_phi);
+        }
+        glEnd();
+    }
+
+    // Longitude arcs (constant theta, sweep phi)
+    for (int s = 0; s < sectors; s++) {
+        float theta = two_pi * s / sectors;
+        glBegin(GL_LINE_STRIP);
+        for (int r = 0; r <= rings; r++) {
+            float phi = pi * r / rings - pi * 0.5f;
+            glVertex3f(a * std::cos(phi) * std::cos(theta),
+                       b * std::cos(phi) * std::sin(theta),
+                       c * std::sin(phi));
+        }
+        glEnd();
+    }
+}
+
+void MapDrawer::DrawObjects()
+{
+    std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> objects;
+    {
+        unique_lock<mutex> lock(mMutexObjects);
+        objects = mvTrackedObjects;
+    }
+
+    glLineWidth(1.5f);
+
+    for (const auto& obj : objects) {
+        if (!obj.isActive || obj.tracked_frames < 5)
+            continue;
+        if (obj.axes.empty() || obj.orientation.empty())
+            continue;
+
+        float a = obj.axes.at<float>(0, 0);
+        float b = obj.axes.at<float>(1, 0);
+        float c = obj.axes.at<float>(2, 0);
+        if (a <= 0.0f || b <= 0.0f || c <= 0.0f)
+            continue;
+
+        // orientation rows = eigenvectors in world frame.
+        // R_world_from_local = orientation.t() → its columns are the local axes.
+        // OpenGL column-major: m[col*4 + row] = R(row, col) = orientation(col, row)
+        const cv::Mat& ori = obj.orientation;
+        GLfloat m[16] = {
+            ori.at<float>(0,0), ori.at<float>(0,1), ori.at<float>(0,2), 0.0f,
+            ori.at<float>(1,0), ori.at<float>(1,1), ori.at<float>(1,2), 0.0f,
+            ori.at<float>(2,0), ori.at<float>(2,1), ori.at<float>(2,2), 0.0f,
+            obj.centroid3D.x,   obj.centroid3D.y,   obj.centroid3D.z,   1.0f
+        };
+
+        // Color by object id so multiple objects are visually distinct
+        switch (obj.id % 6) {
+            case 0: glColor3f(1.0f, 0.5f, 0.0f); break;  // orange
+            case 1: glColor3f(0.0f, 0.8f, 1.0f); break;  // cyan
+            case 2: glColor3f(1.0f, 0.2f, 0.8f); break;  // magenta
+            case 3: glColor3f(0.4f, 1.0f, 0.2f); break;  // lime
+            case 4: glColor3f(1.0f, 1.0f, 0.0f); break;  // yellow
+            default:glColor3f(0.8f, 0.4f, 1.0f); break;  // purple
+        }
+
+        glPushMatrix();
+        glMultMatrixf(m);
+        DrawEllipsoidWireframe(a, b, c);
+        glPopMatrix();
+    }
+}
+
 } //namespace ORB_SLAM

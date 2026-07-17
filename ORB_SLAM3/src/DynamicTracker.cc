@@ -1,6 +1,7 @@
 #include <queue>
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 #include "FrameDrawer.h"
 #include "DynamicTracker.h"
 #include "DynamicObject.h"
@@ -15,7 +16,29 @@ namespace ORB_SLAM3
 {
 using GridType = std::vector<std::size_t>[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
-DynamicTracker::DynamicTracker() : next_id(0) {}
+DynamicTracker::DynamicTracker() : next_id(0), mSessionId(0)
+{
+    const char* log_path =
+        "/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/evaluation/maps/tracking_log.txt";
+    mTrackingLog.open(log_path, std::ios::out | std::ios::trunc);
+    if(mTrackingLog.is_open())
+        mTrackingLog << "# timestamp session_id track_id cx cy cz "
+                        "bbox_x bbox_y bbox_w bbox_h missed_frames tracked_frames\n";
+
+    const char* perf_path =
+        "/root/colcon_ws/src/orb_slam3_ros2_wrapper/datasets/evaluation/maps/perf_log.txt";
+    mPerfLog.open(perf_path, std::ios::out | std::ios::trunc);
+    if(mPerfLog.is_open())
+        mPerfLog << "# timestamp_s dt_ms n_objects\n";
+}
+
+DynamicTracker::~DynamicTracker()
+{
+    if(mTrackingLog.is_open())
+        mTrackingLog.close();
+    if(mPerfLog.is_open())
+        mPerfLog.close();
+}
 
 float DynamicTracker::ComputeIoU(const cv::Rect& a, const cv::Rect& b)
 {
@@ -56,6 +79,9 @@ void DynamicTracker::Reset()
     next_id = 0;
     onInitialization = true;
     onTrackingLost = false;
+    mSessionId++;
+    if(mTrackingLog.is_open())
+        mTrackingLog << "RESET " << mSessionId << "\n";
 }
 
 void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
@@ -70,6 +96,37 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
 
     if(mCurrentFrame.mImGray.empty()) return;
     if(mLastFrame.mImGrayLast.empty()) return;
+
+    auto t_frame_start = std::chrono::steady_clock::now();
+
+    auto logPerf = [&]()
+    {
+        if(!mPerfLog.is_open()) return;
+        auto t_now = std::chrono::steady_clock::now();
+        double dt_ms = std::chrono::duration<double, std::milli>(t_now - t_frame_start).count();
+        mPerfLog << std::fixed << std::setprecision(6)
+                 << mCurrentFrame.mTimeStamp << " "
+                 << std::setprecision(3) << dt_ms << " "
+                 << mCurrentFrame.mDynamicObjects.size() << "\n";
+        mPerfLog.flush();
+    };
+
+    // Tracking log writer — call before any early return
+    auto logObjects = [&]()
+    {
+        if(!mTrackingLog.is_open()) return;
+        double ts = mCurrentFrame.mTimeStamp;
+        for(const auto& obj : mCurrentFrame.mDynamicObjects)
+        {
+            mTrackingLog << std::fixed << std::setprecision(6)
+                << ts << " " << mSessionId << " " << obj.id << " "
+                << obj.centroid3D.x << " " << obj.centroid3D.y << " " << obj.centroid3D.z << " "
+                << obj.bbox.x << " " << obj.bbox.y << " "
+                << obj.bbox.width << " " << obj.bbox.height << " "
+                << obj.missed_frames << " " << obj.tracked_frames << "\n";
+        }
+        mTrackingLog.flush();
+    };
 
     std::vector<std::vector<int>> clusters;
     std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> CurrentObjects;
@@ -450,6 +507,8 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
             if(mpFrameDrawer && !frame.empty())
                 mpFrameDrawer->SetDynamicFrame(frame);
 
+            logObjects();
+            logPerf();
             return;
         }
         else
@@ -502,6 +561,9 @@ void DynamicTracker::ProcessFrame(Frame& mCurrentFrame, Frame& mLastFrame,
                           << std::endl;
         }
     }
+
+    logObjects();
+    logPerf();
 }
 
 float DynamicTracker::Distance(const cv::Point3f& a, const cv::Point3f& b)

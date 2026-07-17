@@ -5,7 +5,20 @@
 #
 # To help the search ORB_SLAM3_ROOT_DIR environment variable as the path to ORB_SLAM3 root folder
 #  e.g. `set( ORB_SLAM3_ROOT_DIR=~/ORB_SLAM3) `
-set(ORB_SLAM3_ROOT_DIR "/home/orb/ORB_SLAM3")
+if(DEFINED ENV{ORB_SLAM3_ROOT_DIR} AND NOT "$ENV{ORB_SLAM3_ROOT_DIR}" STREQUAL "")
+  set(ORB_SLAM3_ROOT_DIR "$ENV{ORB_SLAM3_ROOT_DIR}")
+else()
+  # Probe candidate locations so this works both in the Docker container
+  # (/home/orb/ORB_SLAM3) and on the host.
+  foreach(_candidate
+      "/home/orb/ORB_SLAM3"
+      "/home/ros2-x13/DYNA-SLAM1-ROS2-Docker/ORB_SLAM3")
+    if(EXISTS "${_candidate}/include/System.h")
+      set(ORB_SLAM3_ROOT_DIR "${_candidate}")
+      break()
+    endif()
+  endforeach()
+endif()
 
 # message(${ORB_SLAM3_ROOT_DIR})
 # message(${ORB_SLAM3_ROOT_DIR}/include)

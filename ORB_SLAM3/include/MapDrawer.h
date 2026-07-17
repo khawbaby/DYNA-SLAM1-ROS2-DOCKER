@@ -24,6 +24,7 @@
 #include"MapPoint.h"
 #include"KeyFrame.h"
 #include "Settings.h"
+#include "DynamicObject.h"
 #include<pangolin/pangolin.h>
 
 #include<mutex>
@@ -50,6 +51,9 @@ public:
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw);
 
+    void SetTrackedObjects(const std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>>& objs);
+    void DrawObjects();
+
 private:
 
     bool ParseViewerParamFile(cv::FileStorage &fSettings);
@@ -64,6 +68,11 @@ private:
     Sophus::SE3f mCameraPose;
 
     std::mutex mMutexCamera;
+
+    std::vector<DynamicObject, Eigen::aligned_allocator<DynamicObject>> mvTrackedObjects;
+    std::mutex mMutexObjects;
+
+    void DrawEllipsoidWireframe(float a, float b, float c, int rings = 10, int sectors = 16);
 
     float mfFrameColors[6][3] = {{0.0f, 0.0f, 1.0f},
                                 {0.8f, 0.4f, 1.0f},

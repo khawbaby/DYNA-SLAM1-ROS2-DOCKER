@@ -1,10 +1,11 @@
 #pragma once
-    
+
 #include "DynamicObject.h"
 #include <vector>
 #include <queue>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include "Frame.h"
 #include "Hungarian.h"
 #include "Detection.h"
@@ -47,6 +48,7 @@ public:
     const float MOTION_THRESH = 0.5f;
 
     DynamicTracker();
+    ~DynamicTracker();
     const int MAX_MISSED_FRAMES = 5;   // tune (3–10 typical)
     bool isSamePoint(const cv::Point3f& a, const cv::Point3f& b, float eps = 1e-3f)
     {
@@ -69,6 +71,10 @@ public:
     );
 
     void Reset();
+
+    std::ofstream mTrackingLog;
+    std::ofstream mPerfLog;
+    int mSessionId = 0;
 
 private:
     Hungarian hungarian_solver;

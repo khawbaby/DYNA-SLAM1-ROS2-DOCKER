@@ -310,7 +310,7 @@ void Frame::RefineDynamicMaskRegion(cv::Mat& mask, const cv::Rect& bboxRaw)
     // more silhouette uncertainty at the edge) and over-erases static
     // features around small/distant ones.
     int dilation_size = std::clamp(
-        static_cast<int>(std::round(std::min(bbox.width, bbox.height) * 0.05)),
+        static_cast<int>(std::round(std::min(bbox.width, bbox.height) * 0.02)),
         3, 25);
     cv::Mat kernel = cv::getStructuringElement(
         cv::MORPH_ELLIPSE,
